@@ -124,16 +124,19 @@ class XRRDatasetGenerator:
     # 3-4. 전체 데이터셋 생성
     # ------------------------------------------------
     def generate_dataset(self, n_samples: int, n_layers: int) -> tuple[np.ndarray, list[dict]]:
-        data = []
+        refls = {
+            "thickness"
+        }
         labels = []
-
+        params = []
         for _ in range(n_samples):
-            params = self.sample_layer_parameters(n_layers=n_layers)
-            refl, label = self.generate_sample(params)
-            data.append(refl)
+            param = self.sample_layer_parameters(n_layers=n_layers)
+            refl, label = self.generate_sample(param)
+            refls.append(refl)
             labels.append(label)
+            params.append(param)
 
-        return np.array(data), labels
+        return np.array(refls), labels, params
 
 
 
