@@ -14,7 +14,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from reflecto.simulatior.simulator import ParamSet
+from reflecto.simulator.simulator import ParamSet
 
 
 class ParamQuantizer:
