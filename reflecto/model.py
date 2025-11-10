@@ -201,7 +201,7 @@ def train_epoch(model: nn.Module, loader: torch.utils.data.DataLoader, optimizer
         pbar.set_postfix({**last_parts, "loss": f"{loss.item():.4f}"})
 
     avg = total_loss / len(loader) if len(loader) > 0 else float("nan")
-    return avg, last_parts
+    return avg
 
 
 def validate_epoch(
