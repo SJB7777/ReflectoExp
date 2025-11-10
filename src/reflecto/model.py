@@ -154,7 +154,7 @@ def accuracy_from_logits(logits, targets):
 # -------------------------
 def train_epoch(model: nn.Module, loader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer,
                 device: torch.device, scaler: torch.cuda.amp.GradScaler = None,
-                clip_grad: float = 1.0) -> tuple[float, dict[str, float]]:
+                clip_grad: float = 1.0) -> float:
     """
     Single epoch training with optional AMP scaler.
     Returns: (avg_loss, {"th":.., "rg":.., "sld":..})

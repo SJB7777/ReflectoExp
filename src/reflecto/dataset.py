@@ -14,7 +14,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
-from reflecto.simulator import ParamSet
+from reflecto.simulatior.simulator import ParamSet
 
 
 class ParamQuantizer:
@@ -159,21 +159,20 @@ class DatasetH5(Dataset):
         else:
             self.mean, self.std = 0.0, 1.0
 
-    def __len__(self):
+    def __len__(self) -> int:
         return int(self._length)
 
     # --------------------------
     # HDF5 access helpers
     # --------------------------
-    def _ensure_open(self):
+    def _ensure_open(self) -> h5py.File:
         """Open file per-process (safe with num_workers spawn/fork)."""
         if self._hf is None:
             self._hf = h5py.File(self.h5_path, "r")
 
     def _estimate_stats(self, n_sample: int = 1000) -> tuple[float, float]:
         """Estimate mean/std of log10(R) using random subset."""
-        import numpy as _np
-        rng = _np.random.default_rng(0)
+        rng = np.random.default_rng(0)
         with h5py.File(self.h5_path, "r") as hf:
             n = hf["R"].shape[0]
             idx = rng.choice(n, size=min(n_sample, n), replace=False)
@@ -187,7 +186,7 @@ class DatasetH5(Dataset):
                     vals.append(np.log10(R))
                 else:
                     vals.append(np.asarray(R, dtype=float))
-            arr = _np.concatenate([v.ravel() for v in vals], axis=0)
+            arr = np.concatenate([v.ravel() for v in vals], axis=0)
         arr = arr[np.isfinite(arr)]
         if arr.size == 0:
             return 0.0, 1.0

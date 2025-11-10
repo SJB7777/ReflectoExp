@@ -1,6 +1,6 @@
 [project]
 name = "reflecto"
-version = "0.1.0"
+version = "0.1.1"
 description = "Machine learning tools for X-ray reflectivity analysis"
 readme = "README.md"
 requires-python = ">=3.12"

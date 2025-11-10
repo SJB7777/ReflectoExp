@@ -4,6 +4,8 @@ import numpy as np
 from refnx.reflect import SLD, ReflectModel
 from refnx.reflect.structure import Stack, Structure
 
+from reflecto.simulatior.noise import add_noise
+
 
 @dataclass
 class ParamSet:
@@ -58,11 +60,7 @@ def xrr_simulate(qs, params: list[ParamSet], /, has_noise=False) -> np.ndarray:
     structure = build_structure(params)
     refl = compute_reflectivity(structure, qs)
 
-    if has_noise:
-        # TODO: add noise
-        pass
-
-    return refl
+    return add_noise(refl) if has_noise else refl
 
 
 def main() -> None:
