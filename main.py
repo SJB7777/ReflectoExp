@@ -81,7 +81,7 @@ def main():
     # ---------------------------------------------------
     for epoch in range(1, epochs + 1):
 
-        train_loss, train_parts = train_epoch(
+        train_loss = train_epoch(
             model, train_loader, optimizer, device, scaler
         )
 
