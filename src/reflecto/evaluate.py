@@ -1,3 +1,6 @@
+import warnings
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -13,15 +16,15 @@ from reflecto.model import XRRClassifier
 class XRREvaluator:
     def __init__(
         self,
-        h5_path: str,
-        checkpoint_path: str,
+        h5_path: Path | str,
+        checkpoint_path: Path | str,
         batch_size: int = 64,
         device: str | torch.device = None,
         num_workers: int = 0,   # Windows에서는 0~2 권장
         pin_memory: bool = True,
     ):
-        self.h5_path = h5_path
-        self.checkpoint_path = checkpoint_path
+        self.h5_path = Path(h5_path)
+        self.checkpoint_path = Path(checkpoint_path)
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.batch_size = batch_size
         self.num_workers = num_workers
@@ -34,7 +37,7 @@ class XRREvaluator:
         self.n_sld = len(self.quantizer.sld_bins) - 1
 
         # Dataset
-        self.val_dataset = DatasetH5(self.h5_path, self.quantizer, device="cpu")
+        self.val_dataset = DatasetH5(self.h5_path, self.quantizer)
         self.val_loader = DataLoader(
             self.val_dataset,
             batch_size=self.batch_size,
@@ -55,8 +58,17 @@ class XRREvaluator:
             n_rg_bins=self.n_rg,
             n_sld_bins=self.n_sld
         ).to(self.device)
-
-        self.model.load_state_dict(torch.load(self.checkpoint_path, map_location=self.device))
+        # --- Safe checkpoint loading ---
+        if self.checkpoint_path and self.checkpoint_path.is_file():
+            try:
+                state = torch.load(self.checkpoint_path, map_location=self.device)
+                self.model.load_state_dict(state)
+                print(f"Checkpoint '{self.checkpoint_path}' successfully loaded.")
+            except Exception as e:
+                warnings.warn(f"Faild to load checkpoint: {e}\n→ Evaluation will proceed with a newly initialized model.", stacklevel=2)
+        else:
+            warnings.warn("No checkpoint file found. Evaluation will proceed with a randomly initialized model.", stacklevel=2)
+        # self.model.load_state_dict(torch.load(self.checkpoint_path, map_location=self.device))
         self.model.eval()
 
         # Loss
@@ -254,7 +266,7 @@ class XRREvaluator:
 if __name__ == "__main__":
     evaluator = XRREvaluator(
         h5_path=r"D:\03_Resources\Data\XRR_AI\data\p300o6_raw.h5",
-        checkpoint_path="xrr_model.pt",
+        checkpoint_path=r"D:\03_Resources\Data\XRR_AI\model\xrr_model2.pt",
         batch_size=64,
         num_workers=0  # Windows 안정성
     )
