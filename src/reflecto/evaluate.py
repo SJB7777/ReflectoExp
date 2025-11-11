@@ -194,7 +194,7 @@ class XRREvaluator:
             plt.xlabel("Prediction - Target")
             plt.legend()
 
-        plt.tight_layout()
+        # plt.tight_layout()
         plt.show()
 
     def plot_scatter(self, use_hexbin: bool = False):
@@ -227,7 +227,7 @@ class XRREvaluator:
             plt.ylabel("Predicted")
             plt.legend()
 
-        plt.tight_layout()
+        # plt.tight_layout()
         plt.show()
 
     def plot_correlation(self):
@@ -258,7 +258,7 @@ class XRREvaluator:
         sns.heatmap(df_error.corr(), annot=True, cmap="coolwarm", vmin=-1, vmax=1, ax=axes[2])
         axes[2].set_title("Prediction Error Correlation")
 
-        plt.tight_layout()
+        # plt.tight_layout()
         plt.show()
 
 
@@ -266,7 +266,7 @@ class XRREvaluator:
 if __name__ == "__main__":
     evaluator = XRREvaluator(
         h5_path=r"D:\03_Resources\Data\XRR_AI\data\p300o6_raw.h5",
-        checkpoint_path=r"D:\03_Resources\Data\XRR_AI\model\xrr_model2.pt",
+        checkpoint_path=r"D:\03_Resources\Data\XRR_AI\model\xrr_model.pt",
         batch_size=64,
         num_workers=0  # Windows 안정성
     )
