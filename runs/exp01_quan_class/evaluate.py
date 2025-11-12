@@ -6,11 +6,10 @@ import numpy as np
 import seaborn as sns
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
-from tqdm import tqdm
-
 from reflecto.dataset import DatasetH5, ParamQuantizer
 from reflecto.model import XRRClassifier
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 
 class XRREvaluator:

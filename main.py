@@ -1,10 +1,9 @@
 import torch
+from reflecto.dataset import DatasetH5, ParamQuantizer
+from reflecto.model import XRRClassifier, train_epoch, validate_epoch
 from torch.amp import GradScaler
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
-
-from reflecto.dataset import DatasetH5, ParamQuantizer
-from reflecto.model import XRRClassifier, train_epoch, validate_epoch
 
 
 def main():

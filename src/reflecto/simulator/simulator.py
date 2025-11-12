@@ -1,4 +1,3 @@
-import itertools
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -63,7 +62,6 @@ def compute_reflectivity(structure: Structure, q: np.ndarray) -> np.ndarray:
     return model(q) # nm -> Å
 
 class XRRSimulator:
-
     def __init__(
             self,
             qs: np.ndarray,
@@ -81,7 +79,7 @@ class XRRSimulator:
         self.rough_range = roughness_range  # Å, 주로 0-10Å 세밀
         self.sld_range = sld_range    # x1e-6 Å^-2
 
-    def make_parameters(self) -> Iterator[tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
+    def make_params_refl(self) -> Iterator[tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
 
         for _ in range(0, self.n_samples):
 
@@ -115,7 +113,7 @@ class XRRSimulator:
                 "R", (self.n_samples, len(self.qs)), dtype='f4'
                 )
 
-            iterator = self.make_parameters()
+            iterator = self.make_params_refl()
             if show_progress:
                 iterator = tqdm(
                     iterator,
@@ -132,9 +130,8 @@ class XRRSimulator:
                 d_refl[i] = refl
 
 
-
 def main() -> None:
-    root: Path = Path(r"D:\data\XRR_AI")
+    root: Path = Path(r"D:\03_Resources\Data\XRR_AI\data")
     root.mkdir(parents=True, exist_ok=True)
     file: Path = root / "xrr_data.h5"
     # Measurement Configurations
@@ -147,9 +144,10 @@ def main() -> None:
     qs: np.ndarray = np.linspace(q_min, q_max, q_n)
 
     n_layers: int = 2
-    n_samples: int = 100_000
+    n_samples: int = 1_000_000
     xrr_simulator: XRRSimulator = XRRSimulator(qs, n_layers, n_samples)
     xrr_simulator.save_hdf5(file)
+
 
 if __name__ == "__main__":
     main()

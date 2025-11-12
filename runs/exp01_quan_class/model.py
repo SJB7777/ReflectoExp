@@ -231,8 +231,8 @@ def validate_epoch(
                 logits_rg = logits_rg.clamp(-logits_clip, logits_clip)
                 logits_sld = logits_sld.clamp(-logits_clip, logits_clip)
 
-            if not (torch.isfinite(logits_th).all() and 
-                    torch.isfinite(logits_rg).all() and 
+            if not (torch.isfinite(logits_th).all() and
+                    torch.isfinite(logits_rg).all() and
                     torch.isfinite(logits_sld).all()):
                 raise RuntimeError("Non-finite logits encountered in validation.")
 
