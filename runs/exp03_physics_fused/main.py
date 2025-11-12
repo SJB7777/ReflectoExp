@@ -3,26 +3,39 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+import torch
 from train_fused import FusedTrainer
 
 
 def main():
     config = {
         "exp_name": "exp04_physics_fused",
-        "h5_path": "/mnt/data/reflecto/data/p300o6_raw.h5",
-        "checkpoint_dir": "/mnt/data/reflecto/checkpoints",
-        "epochs": 30,
+        "h5_path": r"D:\data\XRR_AI/xrr_data.h5",
+        "checkpoint_dir": r"D:\data\XRR_AI\test",
+        "norm_ranges": {
+            "thickness": [0.0, 200.0],
+            "roughness": [0.0, 10.0],
+            "sld": [0.0, 140.0]
+        },
+
+        "epochs": 20,
         "batch_size": 32,
         "lr": 1e-3,
         "weight_decay": 1e-5,
         "val_ratio": 0.2,
         "save_every": 5,
-        "physics_weight": 0.5,    # 물리 모델 가중치
-        "fail_safe_mode": "mask", # 실패 처리 방식: "mask", "none", "stochastic"
-        "physics_dropout": 0.1,   # 확률적 드롭아웃 비율
+        "physics_weight": 0.5,
+        "patience": 10,
+        # 하드웨어
+        "device": "cuda" if torch.cuda.is_available() else "cpu",
+        "mixed_precision": True,
+        "num_workers": 4,
+        "resume_from": None,  # "path/to/checkpoint.pt"
     }
 
     trainer = FusedTrainer(config)
+    if config.get("resume_from"):
+        trainer.load_checkpoint(config["resume_from"])
     trainer.train()
 
 
