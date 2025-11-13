@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 # ==================== 설정 (하나의 파일에서 모두 관리) ====================
 CONFIG = {
     "simulation": {
-        "n_samples": 50000,  # 학습용 샘플 수
+        "n_samples": 3_000_000,  # 학습용 샘플 수
         "q_points": 200,
     },
     "model": {
@@ -19,15 +19,15 @@ CONFIG = {
     },
     "training": {
         "batch_size": 128,
-        "epochs": 5,
+        "epochs": 50,
         "lr": 0.001,
         "weight_decay": 1e-5,
         "val_ratio": 0.2,
     },
     "paths": {
-        "h5_file": Path(r"D:\data\XRR_AI\one_layer") / "xrr_1layer_small.h5",
-        "stats_file": Path(r"D:\data\XRR_AI\one_layer") / "stats_1layer.pt",
-        "checkpoint_dir": Path(r"D:\data\XRR_AI\one_layer") / "checkpoints",
+        "h5_file": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer") / "xrr_1layer.h5",
+        "stats_file": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer") / "stats_1layer.pt",
+        "checkpoint_dir": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer") / "checkpoints",
     }
 }
 
@@ -43,6 +43,7 @@ def main():
     h5_path = Path(CONFIG["paths"]["h5_file"])
     if not h5_path.exists():
         print("데이터 파일 없음, 시뮬레이션 실행...")
+        h5_path.parent.mkdir(exist_ok=True)
         import simulate
         simulate.generate_1layer_data()
 

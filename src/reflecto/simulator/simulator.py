@@ -38,8 +38,9 @@ def tth2q_wavelen[T: (float, np.ndarray)](tth: T, wavelen: float = 1.54) -> T:
 
     -> q: 1/Å
     """
-    if 0 > min(tth) or max(tth) > 90:
-        raise ValueError(f"tth should have value under (0, 90) not {tth}")
+
+    # if 0 > min(tth) or max(tth) > 90:
+    #     raise ValueError(f"tth should have value under (0, 90) not {tth}")
     th_rad = np.radians(tth / 2.0)
     return (4 * np.pi / wavelen) * np.sin(th_rad)
 

@@ -9,7 +9,7 @@ import numpy as np
 from reflecto.simulator.simulator import XRRSimulator, tth2q_wavelen
 
 # ==================== 설정 ====================
-OUTPUT_DIR = Path(r"D:\data\XRR_AI\one_layer")
+OUTPUT_DIR = Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 # 1-layer 전용 설정
@@ -26,7 +26,7 @@ PARAMETER_RANGES = {
     "sld": (0.0, 140.0),         # 1e-6 Å^-2
 }
 
-N_SAMPLES = 50_000
+N_SAMPLES = 3_000_000
 # ============================================
 
 def generate_1layer_data():
