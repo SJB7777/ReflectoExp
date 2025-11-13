@@ -10,10 +10,10 @@ from train_fused import FusedTrainer
 def main():
     config = {
         "exp_name": "exp04_physics_fused",
-        "h5_path": r"D:\data\XRR_AI/xrr_data.h5",
-        "checkpoint_dir": r"D:\data\XRR_AI\test",
+        "h5_path": r"D:\03_Resources\Data\XRR_AI\data/xrr_data.h5",
+        "checkpoint_dir": r"D:\03_Resources\Data\XRR_AI\model\exp001_reg_tanh",
         "norm_ranges": {
-            "thickness": [0.0, 200.0],
+            "thickness": [20.0, 150.0],
             "roughness": [0.0, 10.0],
             "sld": [0.0, 140.0]
         },
