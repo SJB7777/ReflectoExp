@@ -1,4 +1,3 @@
-import argparse
 import sys
 from pathlib import Path
 
@@ -8,10 +7,10 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from tqdm import tqdm
-from scipy import signal, fftpack
 from dataset_fused import FusedDatasetH5
 from physics import PhysicsLayer
+from scipy import fftpack, signal
+from tqdm import tqdm
 
 
 class PhysicsValidator:
