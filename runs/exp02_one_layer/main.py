@@ -16,7 +16,7 @@ CONFIG = {
         "sld": (0.0, 140.0),
     },
     "simulation": {
-        "n_samples": 1_000,
+        "n_samples": 1_000_000,
         "q_points": 200,
         "wavelength": 1.54,
         "tth_min": 1.0,
@@ -46,7 +46,7 @@ def main():
     from reflecto.io import next_unique_file
     print("1-Layer XRR Regression 파이프라인 시작")
     exp_dir = CONFIG["base_dir"] / CONFIG["exp_name"]
-    exp_dir = next_unique_file(exp_dir)
+    # exp_dir = next_unique_file(exp_dir)
     exp_dir.mkdir(parents=True, exist_ok=True)
     h5_file = exp_dir / "dataset.h5"
     stats_file = exp_dir / "stats.pt"
