@@ -4,7 +4,7 @@ from pathlib import Path
 
 import h5py
 import numpy as np
-from refnx.reflect import SLD, ReflectModel
+from refnx.reflect import SLD, Footprint, ReflectModel
 from refnx.reflect.structure import Stack, Structure
 from tqdm import tqdm
 
@@ -58,9 +58,36 @@ def build_structure(params) -> Structure:
 
     return air(0, 0) | stack | substrate(0, 3)
 
-def compute_reflectivity(structure: Structure, q: np.ndarray) -> np.ndarray:
+def compute_refl(structure: Structure, q: np.ndarray, wavelen: float = 1.54, is_footprint: bool = True) -> np.ndarray:
+    """
+    Compute reflectivity including beam footprint correction.
+
+    Parameters
+    ----------
+    structure : refnx.reflect.Structure
+        The interfacial structure.
+    q : np.ndarray
+        Momentum transfer values (Å⁻¹).
+    wavelen : float, optional
+        Wavelength of the incident beam (Å). Default = 1.54 Å.
+
+    Returns
+    -------
+    np.ndarray
+        Reflectivity values corrected for beam footprint.
+    """
+    # 1. 기본 ReflectModel 계산
     model = ReflectModel(structure)
-    return model(q) # nm -> Å
+    R = model(q)
+    if is_footprint:
+
+        footprint = Footprint(sample_length=10.0, beam_height=0.1)
+        theta = np.degrees(np.arcsin(np.clip(q * wavelen / (4 * np.pi), -1, 1)))
+        frac = footprint(theta)
+        R_corrected = R * frac
+
+        return R_corrected
+    return R
 
 
 class XRRSimulator:
@@ -123,7 +150,7 @@ class XRRSimulator:
 
     def simulate_one(self, params, has_noise=False) -> np.ndarray:
         structure = build_structure(params)
-        refl = compute_reflectivity(structure, self.qs)
+        refl = compute_refl(structure, self.qs)
 
         self.refl = add_noise(refl) if has_noise else refl
         return self.refl
