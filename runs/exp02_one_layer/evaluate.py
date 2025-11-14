@@ -6,10 +6,11 @@ import torch
 from torch.utils.data import DataLoader
 
 
-def evaluate(model, test_loader: DataLoader, stats_path: Path, save_plot: bool = True):
+def evaluate(model, test_loader: DataLoader, stats_path: Path | str, report_file: Path | None = None, save_plot: bool = True):
     """
     모델 평가: 역정규화 후 물리적 오류 계산
     """
+    stats_path = Path(stats_path)
     device = next(model.parameters()).device
 
     # 정규화 파라미터 로드
@@ -66,22 +67,69 @@ def evaluate(model, test_loader: DataLoader, stats_path: Path, save_plot: bool =
             ax.grid(alpha=0.3)
 
         plt.tight_layout()
-        plt.savefig('error_distribution.png', dpi=300, bbox_inches='tight')
-        print("오류 분포 그래프 저장: error_distribution.png")
+        plt.savefig(report_file, dpi=300, bbox_inches='tight')
+        print(f"오류 분포 그래프 저장: {report_file}.png")
 
     return errors, mae, rmse
 
 
-def load_checkpoint_and_evaluate(checkpoint_path: Path, test_loader: DataLoader, stats_path: Path):
+def load_checkpoint_and_evaluate(test_loader: DataLoader, checkpoint_path: Path, stats_path: Path, report_file: Path):
     """체크포인트 로드 및 평가"""
-    # 모델 구조 복원
+    # 체크포인트 로드
     ckpt = torch.load(checkpoint_path, map_location='cpu')
     config = ckpt['config']['model_args']
 
     from model import XRR1DRegressor
-    model = XRR1DRegressor(q_len=config['q_len'])
+    # 모든 인자로 모델 생성
+    model = XRR1DRegressor(**config)
     model.load_state_dict(ckpt['model_state_dict'])
     model = model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
 
     # 평가
-    evaluate(model, test_loader, stats_path)
+    evaluate(model, test_loader, stats_path, report_file)
+
+
+if __name__ == "__main__":
+    from dataset import XRR1LayerDataset
+
+    CONFIG = {
+        "exp_name": "test",
+        "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer"),
+        "param_ranges": {
+            "thickness": (5.0, 200.0),
+            "roughness": (0.0, 10.0),
+            "sld": (0.0, 140.0),
+        },
+        "simulation": {
+            "n_samples": 30_000,
+            "q_points": 200,
+            "wavelength": 1.54,
+            "tth_min": 1.0,
+            "tth_max": 6.0,
+        },
+        "model": {
+            "n_channels": 64,
+            "depth": 4,
+            "mlp_hidden": 256,
+            "dropout": 0.1,
+        },
+        "training": {
+            "batch_size": 128,
+            "epochs": 20,
+            "lr": 0.001,
+            "weight_decay": 1e-5,
+            "val_ratio": 0.2,
+        },
+    }
+
+    exp_dir = Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer\test")
+    h5_file = exp_dir / "dataset.h5"
+    stats_file = exp_dir / "stats.pt"
+    checkpoint_file = exp_dir / "best.pt"
+    report_file = exp_dir / "error_distribution.png"
+
+    test_set = XRR1LayerDataset(h5_file, stats_file, mode="test", val_ratio=CONFIG["training"]["val_ratio"])
+    test_loader = DataLoader(test_set, batch_size=CONFIG["training"]["batch_size"],
+    shuffle=False, num_workers=0)
+
+    load_checkpoint_and_evaluate(test_loader, checkpoint_file, stats_file, report_file)

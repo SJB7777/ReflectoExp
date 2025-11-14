@@ -9,8 +9,9 @@ from torch.utils.data import Dataset
 class XRR1LayerDataset(Dataset):
     """1-layer 전용 Dataset"""
 
-    def __init__(self, h5_path: str, mode: str = "train", val_ratio: float = 0.2):
-        self.h5_path = Path(h5_path)
+    def __init__(self, h5_file: str | Path, stats_file: str | Path, mode: str = "train", val_ratio: float = 0.2):
+        self.h5_path = Path(h5_file)
+        self.stats_path = stats_file
         self.mode = mode
 
         with h5py.File(self.h5_path, "r") as f:
@@ -36,7 +37,6 @@ class XRR1LayerDataset(Dataset):
         else:  # test
             self.indices = range(val_end, self.n_total)
 
-        self.stats_path = self.h5_path.parent / "stats_1layer.pt"
         self._setup_normalization()
 
     def _setup_normalization(self):

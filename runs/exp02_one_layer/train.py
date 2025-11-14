@@ -10,8 +10,8 @@ from tqdm import tqdm
 
 class Trainer:
     def __init__(self, model, train_loader: DataLoader, val_loader: DataLoader,
-        lr: float = 1e-3, weight_decay: float = 1e-5,
-        checkpoint_dir: str = "./checkpoints"):
+        save_dir: str | Path,
+        lr: float = 1e-3, weight_decay: float = 1e-5):
 
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model = model.to(self.device)
@@ -22,7 +22,7 @@ class Trainer:
         self.train_loader = train_loader
         self.val_loader = val_loader
 
-        self.checkpoint_dir = Path(checkpoint_dir)
+        self.checkpoint_dir = Path(save_dir)
         self.checkpoint_dir.mkdir(exist_ok=True)
 
         self.best_val_loss = float('inf')
@@ -65,7 +65,7 @@ class Trainer:
         return total_loss / len(self.val_loader.dataset)
 
     def train(self, epochs: int):
-        print(f"📊 Train: {len(self.train_loader.dataset)}, Val: {len(self.val_loader.dataset)}")
+        print(f"Train: {len(self.train_loader.dataset)}, Val: {len(self.val_loader.dataset)}")
 
         for epoch in range(1, epochs + 1):
             train_loss = self.train_epoch(epoch)
@@ -91,6 +91,7 @@ class Trainer:
                 break
 
     def save_checkpoint(self, filename: str, epoch: int, val_loss: float):
+
         torch.save({
             'epoch': epoch,
             'model_state_dict': self.model.state_dict(),
@@ -98,8 +99,6 @@ class Trainer:
             'val_loss': val_loss,
             'config': {
                 'model_class': self.model.__class__.__name__,
-                'model_args': {
-                    'q_len': self.model.regressor[0].in_features,
-                }
+                'model_args': self.model.config,
             }
         }, self.checkpoint_dir / filename)

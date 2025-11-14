@@ -12,7 +12,13 @@ class XRR1DRegressor(nn.Module):
     def __init__(self, q_len: int, n_channels: int = 64, depth: int = 4,
         mlp_hidden: int = 256, dropout: float = 0.1):
         super().__init__()
-
+        self.config = {
+            'q_len': q_len,
+            'n_channels': n_channels,
+            'depth': depth,
+            'mlp_hidden': mlp_hidden,
+            'dropout': dropout,
+        }
         # 1D CNN Encoder
         layers = []
         in_ch = 1
