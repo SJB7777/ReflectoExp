@@ -119,7 +119,7 @@ class FusedTrainer:
             targets = batch["targets"].to(self.device, non_blocking=True)
 
             # 7. Mixed Precision Forward
-            with torch.cuda.amp.autocast(enabled=self.scaler is not None):
+            with torch.cuda.autocast("cuda", enabled=self.scaler is not None):
                 outputs = self.model(refl)
                 loss = fused_loss_with_confidence(outputs, targets, self.config["physics_weight"])
 

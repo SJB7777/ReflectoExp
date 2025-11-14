@@ -80,7 +80,7 @@ class PhysicsLayer(nn.Module):
         self.dq = float(q_values[1] - q_values[0])
 
     def forward(self, reflectivity: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        """✅ 반환값: (physics_output, validity_mask)"""
+        """반환값: (physics_output, validity_mask)"""
         B = reflectivity.shape[0]
         device = reflectivity.device
 
@@ -94,7 +94,7 @@ class PhysicsLayer(nn.Module):
             fitted_params = self._process_single_with_fitting(q_np, R_batch_np[i])
 
             if fitted_params is not None:
-                # ✅ 첫 피크 = 첫 번째 두께, 두 번째 피크 = 두 번째 두께
+                # 첫 피크 = 첫 번째 두께, 두 번째 피크 = 두 번째 두께
                 physics_output[i, 0] = float(fitted_params[1])  # p1
                 physics_output[i, 1] = float(fitted_params[4])  # p2
                 validity_mask[i] = 1.0
@@ -123,9 +123,8 @@ class PhysicsLayer(nn.Module):
         # 4. 피크 위치
         peaks = x_fft[peak_indices]
 
-        # 5. ✅ valid_comb 로직으로 유효한 조합 찾기
+        # 5. valid_comb 로직으로 유효한 조합 찾기
         valid_combs = self._find_valid_combinations(peaks)
-
         # 6. 조합이 없으면 fallback: Top 3 피크
         if len(valid_combs) == 0:
             peak_heights = y_fft[peak_indices]
@@ -182,7 +181,6 @@ class PhysicsLayer(nn.Module):
         return best_params
 
     def _find_valid_combinations(self, peaks: np.ndarray) -> list:
-        """✅ 주피터 노트북 valid_comb 함수 완전 복제"""
         ln = len(peaks)
         result = []
         for i in range(ln):

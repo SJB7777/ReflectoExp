@@ -19,7 +19,7 @@ CONFIG = {
         "n_samples": 1_000_000,
         "q_points": 200,
         "wavelength": 1.54,
-        "tth_min": 1.0,
+        "tth_min": 0.1,
         "tth_max": 6.0,
     },
     "model": {

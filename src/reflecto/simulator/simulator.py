@@ -39,8 +39,6 @@ def tth2q_wavelen[T: (float, np.ndarray)](tth: T, wavelen: float = 1.54) -> T:
     -> q: 1/Å
     """
 
-    # if 0 > min(tth) or max(tth) > 90:
-    #     raise ValueError(f"tth should have value under (0, 90) not {tth}")
     th_rad = np.radians(tth / 2.0)
     return (4 * np.pi / wavelen) * np.sin(th_rad)
 
@@ -98,7 +96,7 @@ class XRRSimulator:
             n_samples: int,
             thickness_range: tuple[float, float] = (30.0, 100.0),
             roughness_range: tuple[float, float] = (0.0, 10.0),
-            sld_range: tuple[float, float] = (0.5, 60.0),
+            sld_range: tuple[float, float] = (0.5, 50.0),
             max_total_thickness: float = 250,
             has_noise: bool = True,
             has_footprint: bool = False
@@ -147,7 +145,6 @@ class XRRSimulator:
             refl = self.simulate_one(params, has_noise=self.has_noise, has_footprint=self.has_footprint)
 
             yield thicknesses, roughnesses, slds, refl
-
 
     def simulate_one(self, params, has_noise=True, has_footprint=True) -> np.ndarray:
         structure = build_structure(params)

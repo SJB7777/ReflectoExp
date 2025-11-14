@@ -122,7 +122,7 @@ if __name__ == "__main__":
         },
     }
 
-    exp_dir = Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer\test")
+    exp_dir = Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer\run")
     h5_file = exp_dir / "dataset.h5"
     stats_file = exp_dir / "stats.pt"
     checkpoint_file = exp_dir / "best.pt"
