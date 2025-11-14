@@ -1,41 +1,10 @@
-from pathlib import Path
 
 import numpy as np
 import torch
+from config import CONFIG
 from dataset import XRR1LayerDataset
 from evaluate import load_checkpoint_and_evaluate
 from torch.utils.data import DataLoader
-
-# ==================== 설정 (하나의 파일에서 모두 관리) ====================
-CONFIG = {
-    "exp_name": "run",
-    "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer"),
-    "param_ranges": {
-        "thickness": (5.0, 200.0),
-        "roughness": (0.0, 10.0),
-        "sld": (0.0, 140.0),
-    },
-    "simulation": {
-        "n_samples": 1_000_000,
-        "q_points": 200,
-        "wavelength": 1.54,
-        "tth_min": 0.1,
-        "tth_max": 6.0,
-    },
-    "model": {
-        "n_channels": 64,
-        "depth": 4,
-        "mlp_hidden": 256,
-        "dropout": 0.1,
-    },
-    "training": {
-        "batch_size": 128,
-        "epochs": 20,
-        "lr": 0.001,
-        "weight_decay": 1e-5,
-        "val_ratio": 0.2,
-    },
-}
 
 # 재현성 보장
 torch.manual_seed(42)
@@ -74,9 +43,8 @@ def main():
     # 모델 생성
     from model import XRR1DRegressor
 
-    q_len = train_set.q_values.shape[0]
     model = XRR1DRegressor(
-        q_len=q_len,
+        q_len=CONFIG["simulation"]["q_points"],
         n_channels=CONFIG["model"]["n_channels"],
         depth=CONFIG["model"]["depth"],
         mlp_hidden=CONFIG["model"]["mlp_hidden"],

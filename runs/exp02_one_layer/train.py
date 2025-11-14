@@ -27,7 +27,7 @@ class Trainer:
 
         self.best_val_loss = float('inf')
         self.patience_counter = 0
-        self.early_stop_patience = 15
+        self.early_stop_patience = max(10, len(self.train_loader) // 100)
 
         print(f"🚀 학습 시작 - Device: {self.device}")
 
@@ -72,7 +72,7 @@ class Trainer:
             val_loss = self.validate()
 
             print(f"【Epoch {epoch:02d}】 Train Loss: {train_loss:.4f} | "
-                  f"Val Loss: {val_loss:.4f} | LR: {self.optimizer.param_groups[0]['lr']:.6f}")
+                f"Val Loss: {val_loss:.4f} | LR: {self.optimizer.param_groups[0]['lr']:.6f}")
 
             self.scheduler.step(val_loss)
 

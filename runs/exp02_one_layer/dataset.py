@@ -14,12 +14,12 @@ class XRR1LayerDataset(Dataset):
         self.stats_path = stats_file
         self.mode = mode
 
-        with h5py.File(self.h5_path, "r") as f:
-            self.q_values = f["q"][:]
-            self.thickness = f["thickness"][:].squeeze()
-            self.roughness = f["roughness"][:].squeeze()
-            self.sld = f["sld"][:].squeeze()
-            self.reflectivity = f["R"][:]
+        with h5py.File(self.h5_path, "r") as hf:
+            self.q_values = hf["q"][:]
+            self.thickness = hf["thickness"][:].squeeze()
+            self.roughness = hf["roughness"][:].squeeze()
+            self.sld = hf["sld"][:].squeeze()
+            self.reflectivity = hf["R"][:]
 
         self.n_total = len(self.thickness)
 
@@ -45,8 +45,10 @@ class XRR1LayerDataset(Dataset):
             # 통계 계산 (train 부분만)
             train_indices = range(int(self.n_total * 0.7))
 
-            self.refl_mean = np.mean(self.reflectivity[train_indices], axis=0)
-            self.refl_std = np.std(self.reflectivity[train_indices], axis=0)
+            R_log = np.log10(np.maximum(self.reflectivity[train_indices], 1e-15))
+
+            self.refl_mean = np.mean(R_log, axis=0)
+            self.refl_std = np.std(R_log, axis=0)
 
             params = np.stack([
                 self.thickness[train_indices],

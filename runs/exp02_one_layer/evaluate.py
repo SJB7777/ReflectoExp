@@ -3,6 +3,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from model import XRR1DRegressor
 from torch.utils.data import DataLoader
 
 
@@ -68,7 +69,7 @@ def evaluate(model, test_loader: DataLoader, stats_path: Path | str, report_file
 
         plt.tight_layout()
         plt.savefig(report_file, dpi=300, bbox_inches='tight')
-        print(f"오류 분포 그래프 저장: {report_file}.png")
+        print(f"오류 분포 그래프 저장: {report_file}")
 
     return errors, mae, rmse
 
@@ -79,7 +80,6 @@ def load_checkpoint_and_evaluate(test_loader: DataLoader, checkpoint_path: Path,
     ckpt = torch.load(checkpoint_path, map_location='cpu')
     config = ckpt['config']['model_args']
 
-    from model import XRR1DRegressor
     # 모든 인자로 모델 생성
     model = XRR1DRegressor(**config)
     model.load_state_dict(ckpt['model_state_dict'])
@@ -90,37 +90,8 @@ def load_checkpoint_and_evaluate(test_loader: DataLoader, checkpoint_path: Path,
 
 
 if __name__ == "__main__":
+    from config import CONFIG
     from dataset import XRR1LayerDataset
-
-    CONFIG = {
-        "exp_name": "test",
-        "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer"),
-        "param_ranges": {
-            "thickness": (5.0, 200.0),
-            "roughness": (0.0, 10.0),
-            "sld": (0.0, 140.0),
-        },
-        "simulation": {
-            "n_samples": 30_000,
-            "q_points": 200,
-            "wavelength": 1.54,
-            "tth_min": 1.0,
-            "tth_max": 6.0,
-        },
-        "model": {
-            "n_channels": 64,
-            "depth": 4,
-            "mlp_hidden": 256,
-            "dropout": 0.1,
-        },
-        "training": {
-            "batch_size": 128,
-            "epochs": 20,
-            "lr": 0.001,
-            "weight_decay": 1e-5,
-            "val_ratio": 0.2,
-        },
-    }
 
     exp_dir = Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer\run")
     h5_file = exp_dir / "dataset.h5"

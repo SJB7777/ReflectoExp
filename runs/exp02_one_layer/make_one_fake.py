@@ -1,6 +1,7 @@
 import numpy as np
 
-from reflecto.simulator.simulator import XRRSimulator, tth2q_wavelen, ParamSet
+from reflecto.simulator.simulator import ParamSet, XRRSimulator, tth2q_wavelen
+
 
 def generate_dummy_xrr(qs, param: ParamSet):
 

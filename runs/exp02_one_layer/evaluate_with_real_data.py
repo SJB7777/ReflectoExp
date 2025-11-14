@@ -1,9 +1,9 @@
 from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-import matplotlib.pyplot as plt
-
 
 
 # ------------------------------
@@ -70,6 +70,7 @@ def make_dataloader_from_arrays(
 
     if true_params is None:
         # dummy targets (required by dataset interface)
+        print("실측 파라미터 없음 - 정성적 평가만 진행")
         targets_norm = torch.zeros((R_tensor.shape[0], param_mean.size), dtype=torch.float32)
     else:
         params = np.atleast_2d(true_params)
@@ -140,8 +141,9 @@ def evaluate_with_plots(model, data_loader: DataLoader, stats_path: Path, out_pr
         plt.title(f'Parity: {name}')
         plt.grid(alpha=0.3)
         plt.tight_layout()
-        pfile = out_prefix / f'parity_{i}_{name.replace(" ", "_")}.png'
-        plt.savefig(pfile, dpi=300)
+        # pfile = out_prefix / f'parity_{i}_{name.replace(" ", "_")}.png'
+        # plt.savefig(pfile, dpi=300)
+        plt.show()
         plt.close()
 
     # residual histograms
@@ -153,8 +155,9 @@ def evaluate_with_plots(model, data_loader: DataLoader, stats_path: Path, out_pr
         plt.xlabel('Error')
         plt.ylabel('Density')
         plt.tight_layout()
-        pfile = out_prefix / f'resid_hist_{i}_{name.replace(" ", "_")}.png'
-        plt.savefig(pfile, dpi=300)
+        # pfile = out_prefix / f'resid_hist_{i}_{name.replace(" ", "_")}.png'
+        # plt.savefig(pfile, dpi=300)
+        plt.show()
         plt.close()
 
     # Optional: save per-sample spectrum comparison (measured vs reconstructed simulated from preds)
@@ -172,7 +175,7 @@ def evaluate_with_plots(model, data_loader: DataLoader, stats_path: Path, out_pr
 # Example usage block (사용자 환경에 맞게 수정)
 # ------------------------------
 if __name__ == "__main__":
-
+    from model import XRR1DRegressor
     # -----------------------------
     # 경로 설정
     # -----------------------------
@@ -195,7 +198,7 @@ if __name__ == "__main__":
     # -----------------------------
     ckpt = torch.load(checkpoint_file, map_location='cpu')
     config = ckpt['config']['model_args']
-    from model import XRR1DRegressor
+
     model = XRR1DRegressor(**config)
     model.load_state_dict(ckpt['model_state_dict'])
     model = model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))

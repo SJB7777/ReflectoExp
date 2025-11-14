@@ -44,9 +44,9 @@ class XRR1DRegressor(nn.Module):
             nn.Linear(encoder_out_dim, mlp_hidden),
             nn.ReLU(inplace=True),
             nn.Dropout(dropout),
-            nn.Linear(mlp_hidden, mlp_hidden // 2),
+            nn.Linear(mlp_hidden, (mlp_hidden + 1) // 2),
             nn.ReLU(inplace=True),
-            nn.Linear(mlp_hidden // 2, 3)  # ** 3개 파라미터 직접 출력 **
+            nn.Linear((mlp_hidden + 1), 3)
         )
 
         self._init_weights()

@@ -35,6 +35,7 @@ def generate_1layer_data(config: dict, h5_file: Path | str):
         thickness_range=param_ranges["thickness"],
         roughness_range=param_ranges["roughness"],
         sld_range=param_ranges["sld"],
+        has_footprint=True
     )
 
 
