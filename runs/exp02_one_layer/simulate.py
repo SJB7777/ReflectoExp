@@ -47,19 +47,4 @@ def generate_1layer_data(config: dict, h5_file: Path | str):
     print(f"   - 파라미터 범위: {param_ranges}")
 
 if __name__ == "__main__":
-    DEFAULT_CONFIG = {
-        "paths": {"h5_file": "./data/xrr_1layer.h5"},
-        "simulation": {
-            "wavelength": 1.54,
-            "tth_min": 1.0,
-            "tth_max": 6.0,
-            "q_points": 200,
-            "n_samples": 50000,
-        },
-        "param_ranges": {
-            "thickness": (5.0, 200.0),
-            "roughness": (0.0, 10.0),
-            "sld": (0.0, 140.0),
-        }
-    }
-    generate_1layer_data(DEFAULT_CONFIG)
+    pass

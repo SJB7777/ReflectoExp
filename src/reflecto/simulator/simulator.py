@@ -43,7 +43,7 @@ def tth2q_wavelen[T: (float, np.ndarray)](tth: T, wavelen: float = 1.54) -> T:
     return (4 * np.pi / wavelen) * np.sin(th_rad)
 
 
-def build_structure(params) -> Structure:
+def build_structure(params: list[ParamSet]) -> Structure:
     """refnx Structure를 연속 파라미터로부터 생성."""
     air = SLD(0.0, name="Air")
     substrate = SLD(20, name="Substrate")
@@ -56,7 +56,7 @@ def build_structure(params) -> Structure:
 
     return air(0, 0) | stack | substrate(0, 3)
 
-def compute_refl(structure: Structure, q: np.ndarray, wavelen: float = 1.54, is_footprint: bool = True) -> np.ndarray:
+def calc_refl(structure: Structure, q: np.ndarray, wavelen: float = 1.54, is_footprint: bool = True) -> np.ndarray:
     """
     Compute reflectivity including beam footprint correction.
 
@@ -148,7 +148,7 @@ class XRRSimulator:
 
     def simulate_one(self, params, has_noise=True, has_footprint=True) -> np.ndarray:
         structure = build_structure(params)
-        refl = compute_refl(structure, self.qs, is_footprint=has_footprint)
+        refl = calc_refl(structure, self.qs, is_footprint=has_footprint)
 
         self.refl = add_noise(refl) if has_noise else refl
         return self.refl
