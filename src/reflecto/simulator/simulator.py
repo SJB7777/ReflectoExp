@@ -48,7 +48,7 @@ def tth2q_wavelen[T: (float, np.ndarray)](tth: T, wavelen: float = 1.54) -> T:
 def build_structure(params) -> Structure:
     """refnx Structure를 연속 파라미터로부터 생성."""
     air = SLD(0.0, name="Air")
-    substrate = SLD(19.2, name="Substrate")
+    substrate = SLD(20, name="Substrate")
 
     stack = Stack(name="MultiLayer", repeats=len(params))
 
@@ -98,9 +98,10 @@ class XRRSimulator:
             n_samples: int,
             thickness_range: tuple[float, float] = (30.0, 100.0),
             roughness_range: tuple[float, float] = (0.0, 10.0),
-            sld_range: tuple[float, float] = (0.5, 20.0),
+            sld_range: tuple[float, float] = (0.5, 60.0),
             max_total_thickness: float = 250,
-            has_noise: bool = True
+            has_noise: bool = True,
+            has_footprint: bool = False
             ):
         self.qs = qs
         self.n_layers = n_layers
@@ -112,6 +113,7 @@ class XRRSimulator:
         self.max_total_thickness = max_total_thickness
 
         self.has_noise = has_noise
+        self.has_footprint = has_footprint
 
     def sample_thicknesses_divide_and_conquer(self) -> np.ndarray:
         """Dirichlet 분포를 사용하여 균일한 두께 샘플링"""
@@ -142,15 +144,14 @@ class XRRSimulator:
             for t, r, s in zip(thicknesses, roughnesses, slds, strict=True):
                 params.append(ParamSet(t, r, s))
 
-            refl = self.simulate_one(params)
-            if self.has_noise:
-                refl = add_noise(refl)
+            refl = self.simulate_one(params, has_noise=self.has_noise, has_footprint=self.has_footprint)
+
             yield thicknesses, roughnesses, slds, refl
 
 
-    def simulate_one(self, params, has_noise=False) -> np.ndarray:
+    def simulate_one(self, params, has_noise=True, has_footprint=True) -> np.ndarray:
         structure = build_structure(params)
-        refl = compute_refl(structure, self.qs)
+        refl = compute_refl(structure, self.qs, is_footprint=has_footprint)
 
         self.refl = add_noise(refl) if has_noise else refl
         return self.refl
