@@ -96,7 +96,7 @@ class XRRSimulator:
             n_samples: int,
             thickness_range: tuple[float, float] = (30.0, 100.0),
             roughness_range: tuple[float, float] = (0.0, 10.0),
-            sld_range: tuple[float, float] = (0.5, 50.0),
+            sld_range: tuple[float, float] = (0.5, 10.0),
             max_total_thickness: float = 250,
             has_noise: bool = True,
             has_footprint: bool = False
