@@ -1,4 +1,3 @@
-# dataset.py
 from pathlib import Path
 
 import h5py
@@ -23,7 +22,7 @@ class XRR1LayerDataset(Dataset):
 
         self.n_total = len(self.thickness)
 
-        # ✅ 명확한 분할 (Train: 70%, Val: 20%, Test: 10%)
+        # 명확한 분할 (Train: 70%, Val: 20%, Test: 10%)
         test_ratio = 0.1
         train_ratio = 1.0 - val_ratio - test_ratio
 
@@ -58,17 +57,17 @@ class XRR1LayerDataset(Dataset):
             self.param_mean = np.mean(params, axis=0)
             self.param_std = np.std(params, axis=0)
 
-            # ✅ torch tensor로 저장하여 torch.load 문제 해결
+            # torch tensor로 저장하여 torch.load 문제 해결
             torch.save({
                 "refl_mean": torch.from_numpy(self.refl_mean),
                 "refl_std": torch.from_numpy(self.refl_std),
                 "param_mean": torch.from_numpy(self.param_mean),
                 "param_std": torch.from_numpy(self.param_std),
             }, self.stats_path)
-            print(f"📊 정규화 파라미터 저장: {self.stats_path}")
+            print(f"정규화 파라미터 저장: {self.stats_path}")
 
         else:
-            # ✅ 저장된 tensor 로드
+            # 저장된 tensor 로드
             stats = torch.load(self.stats_path)
             self.refl_mean = stats["refl_mean"].numpy()
             self.refl_std = stats["refl_std"].numpy()

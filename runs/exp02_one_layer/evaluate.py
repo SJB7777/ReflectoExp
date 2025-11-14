@@ -1,12 +1,12 @@
-# evaluate.py
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
 
 
-def evaluate(model, test_loader, stats_path: Path, save_plot: bool = True):
+def evaluate(model, test_loader: DataLoader, stats_path: Path, save_plot: bool = True):
     """
     모델 평가: 역정규화 후 물리적 오류 계산
     """
@@ -14,13 +14,14 @@ def evaluate(model, test_loader, stats_path: Path, save_plot: bool = True):
 
     # 정규화 파라미터 로드
     stats = torch.load(stats_path)
-    param_mean = stats["param_mean"]  # (3,)
-    param_std = stats["param_std"]    # (3,)
+    param_mean = stats["param_mean"]
+    param_std = stats["param_std"]
 
     model.eval()
     all_preds_norm = []
     all_targets_norm = []
 
+    print("테스트 평가 중...")
     with torch.no_grad():
         for R, params_norm in test_loader:
             R = R.to(device)
@@ -29,7 +30,7 @@ def evaluate(model, test_loader, stats_path: Path, save_plot: bool = True):
             all_preds_norm.append(pred_norm)
             all_targets_norm.append(params_norm)
 
-    # 역정규화 (물리적 값으로 복원)
+    # 역정규화
     preds = torch.cat(all_preds_norm) * param_std + param_mean
     targets = torch.cat(all_targets_norm) * param_std + param_mean
 
@@ -39,7 +40,7 @@ def evaluate(model, test_loader, stats_path: Path, save_plot: bool = True):
     rmse = torch.sqrt(torch.mean(errors ** 2, dim=0))
 
     print("\n" + "="*50)
-    print("📈 TEST RESULTS")
+    print("TEST RESULTS")
     print("="*50)
     param_names = ["Thickness (nm)", "Roughness (Å)", "SLD"]
     for i, name in enumerate(param_names):
@@ -66,11 +67,12 @@ def evaluate(model, test_loader, stats_path: Path, save_plot: bool = True):
 
         plt.tight_layout()
         plt.savefig('error_distribution.png', dpi=300, bbox_inches='tight')
-        print("📊 오류 분포 그래프 저장: error_distribution.png")
+        print("오류 분포 그래프 저장: error_distribution.png")
 
     return errors, mae, rmse
 
-def load_model_and_evaluate(checkpoint_path: Path, h5_path: Path, stats_path: Path):
+
+def load_checkpoint_and_evaluate(checkpoint_path: Path, test_loader: DataLoader, stats_path: Path):
     """체크포인트 로드 및 평가"""
     # 모델 구조 복원
     ckpt = torch.load(checkpoint_path, map_location='cpu')
@@ -79,13 +81,7 @@ def load_model_and_evaluate(checkpoint_path: Path, h5_path: Path, stats_path: Pa
     from model import XRR1DRegressor
     model = XRR1DRegressor(q_len=config['q_len'])
     model.load_state_dict(ckpt['model_state_dict'])
-
-    # 테스트 데이터셋
-    from dataset import XRR1LayerDataset
-    from torch.utils.data import DataLoader
-
-    test_set = XRR1LayerDataset(h5_path, mode="test")
-    test_loader = DataLoader(test_set, batch_size=256, shuffle=False, num_workers=2)
+    model = model.to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
 
     # 평가
     evaluate(model, test_loader, stats_path)

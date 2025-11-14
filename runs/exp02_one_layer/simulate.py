@@ -1,63 +1,64 @@
-import sys
 from pathlib import Path
-
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root / "src"))
 
 import numpy as np
 
 from reflecto.simulator.simulator import XRRSimulator, tth2q_wavelen
 
-# ==================== 설정 ====================
-OUTPUT_DIR = Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer")
-OUTPUT_DIR.mkdir(exist_ok=True)
 
-# 1-layer 전용 설정
-MEASUREMENT_CONFIG = {
-    "wavelength": 1.54,  # Å
-    "tth_min": 1.0,      # degree
-    "tth_max": 6.0,
-    "q_points": 200,
-}
+def generate_1layer_data(config: dict, h5_file: Path | str):
+    """
+    1-layer XRR 데이터 생성
 
-PARAMETER_RANGES = {
-    "thickness": (5.0, 200.0),   # nm
-    "roughness": (0.0, 10.0),    # Å
-    "sld": (0.0, 140.0),         # 1e-6 Å^-2
-}
-
-N_SAMPLES = 3_000_000
-# ============================================
-
-def generate_1layer_data():
-    """1-layer XRD 데이터 생성"""
+    Args:
+        config: main.py의 CONFIG 딕셔너리 (simulation, paths, param_ranges 포함)
+    """
     print("=== 1-Layer XRR 데이터 생성 시작 ===")
 
+    # config에서 모든 파라미터 추출
+    simulation = config["simulation"]
+    param_ranges = config["param_ranges"]
+    h5_file = Path(h5_file)
+    # 출력 디렉토리 생성
+    output_dir = h5_file.parent
+    output_dir.mkdir(exist_ok=True, parents=True)
+
     # q 벡터 생성
-    q_min = tth2q_wavelen(MEASUREMENT_CONFIG["tth_min"], MEASUREMENT_CONFIG["wavelength"])
-    q_max = tth2q_wavelen(MEASUREMENT_CONFIG["tth_max"], MEASUREMENT_CONFIG["wavelength"])
-    q_values = np.linspace(q_min, q_max, MEASUREMENT_CONFIG["q_points"])
+    q_min = tth2q_wavelen(simulation["tth_min"], simulation["wavelength"])
+    q_max = tth2q_wavelen(simulation["tth_max"], simulation["wavelength"])
+    q_values = np.linspace(q_min, q_max, simulation["q_points"])
 
     # 시뮬레이터 초기화 (n_layers=1)
     simulator = XRRSimulator(
         qs=q_values,
-        n_layers=1,  # ** 1-layer 전용 **
-        n_samples=N_SAMPLES,
-        thickness_range=PARAMETER_RANGES["thickness"],
-        roughness_range=PARAMETER_RANGES["roughness"],
-        sld_range=PARAMETER_RANGES["sld"],
+        n_layers=1,
+        n_samples=simulation["n_samples"],
+        thickness_range=param_ranges["thickness"],
+        roughness_range=param_ranges["roughness"],
+        sld_range=param_ranges["sld"],
     )
 
-    # HDF5 파일 생성
-    output_path = OUTPUT_DIR / "xrr_1layer_small.h5"
-    simulator.save_hdf5(output_path, show_progress=True)
 
-    print(f"데이터 저장 완료: {output_path}")
-    print(f"   - 샘플 수: {N_SAMPLES}")
+    simulator.save_hdf5(h5_file, show_progress=True)
+
+    print(f"\n 데이터 저장 완료: {h5_file}")
+    print(f"   - 샘플 수: {simulation['n_samples']:,}")
     print(f"   - q 포인트: {len(q_values)}")
-    print(f"   - 파라미터 범위: {PARAMETER_RANGES}")
-
-    return output_path
+    print(f"   - 파라미터 범위: {param_ranges}")
 
 if __name__ == "__main__":
-    generate_1layer_data()
+    DEFAULT_CONFIG = {
+        "paths": {"h5_file": "./data/xrr_1layer.h5"},
+        "simulation": {
+            "wavelength": 1.54,
+            "tth_min": 1.0,
+            "tth_max": 6.0,
+            "q_points": 200,
+            "n_samples": 50000,
+        },
+        "param_ranges": {
+            "thickness": (5.0, 200.0),
+            "roughness": (0.0, 10.0),
+            "sld": (0.0, 140.0),
+        }
+    }
+    generate_1layer_data(DEFAULT_CONFIG)

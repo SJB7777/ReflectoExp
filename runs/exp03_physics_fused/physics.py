@@ -1,12 +1,11 @@
 import logging
+
 import numpy as np
 import torch
 import torch.nn as nn
-from scipy import signal
-from scipy.signal import argrelmax
+from scipy import fftpack, interpolate, signal
 from scipy.optimize import curve_fit
-from scipy import interpolate, fftpack
-from scipy.signal import windows as fft_windows
+from scipy.signal import argrelmax, windows as fft_windows
 
 logger = logging.getLogger(__name__)
 
@@ -84,29 +83,29 @@ class PhysicsLayer(nn.Module):
         """✅ 반환값: (physics_output, validity_mask)"""
         B = reflectivity.shape[0]
         device = reflectivity.device
-        
+
         q_np = self.q_values.cpu().numpy()
         R_batch_np = reflectivity.cpu().numpy()
-        
+
         physics_output = torch.zeros(B, self.n_layers, device=device)
         validity_mask = torch.zeros(B, device=device)
-        
+
         for i in range(B):
             fitted_params = self._process_single_with_fitting(q_np, R_batch_np[i])
-            
+
             if fitted_params is not None:
                 # ✅ 첫 피크 = 첫 번째 두께, 두 번째 피크 = 두 번째 두께
                 physics_output[i, 0] = float(fitted_params[1])  # p1
                 physics_output[i, 1] = float(fitted_params[4])  # p2
                 validity_mask[i] = 1.0
-        
+
         return physics_output, validity_mask
 
     def _process_single_with_fitting(self, q: np.ndarray, R: np.ndarray):
         """ valid_comb 로직 적용 + 피팅"""
         # 1. Baseline 제거
         R_baseline_removed = self._remove_baseline(R)
-        
+
         # 2. FFT
         x_fft, y_fft = self._compute_fft(q, R_baseline_removed)
 
@@ -123,16 +122,16 @@ class PhysicsLayer(nn.Module):
             return None
         # 4. 피크 위치
         peaks = x_fft[peak_indices]
-        
+
         # 5. ✅ valid_comb 로직으로 유효한 조합 찾기
         valid_combs = self._find_valid_combinations(peaks)
-        
+
         # 6. 조합이 없으면 fallback: Top 3 피크
         if len(valid_combs) == 0:
             peak_heights = y_fft[peak_indices]
             top3_idx = np.argsort(-peak_heights)[:3]
             top3_peaks = x_fft[peak_indices[top3_idx]]
-            
+
             # 중복 제거
             unique_peaks = self._select_unique_peaks(top3_peaks, y_fft, x_fft)
             if len(unique_peaks) < 3:
@@ -166,7 +165,7 @@ class PhysicsLayer(nn.Module):
 
                 # 피팅
                 popt, pcov = curve_fit(
-                    func_gauss3, x_fit, y_fit, 
+                    func_gauss3, x_fit, y_fit,
                     p0=p0, maxfev=2000
                 )
 
@@ -179,7 +178,7 @@ class PhysicsLayer(nn.Module):
 
             except Exception:
                 continue
-        
+
         return best_params
 
     def _find_valid_combinations(self, peaks: np.ndarray) -> list:
@@ -202,17 +201,17 @@ class PhysicsLayer(nn.Module):
         peak_heights = np.array([y_fft[np.argmin(np.abs(x_fft - p))] for p in peaks])
         sorted_idx = np.argsort(-peak_heights)
         peaks_sorted = peaks[sorted_idx]
-        
+
         unique_peaks = []
         for p in peaks_sorted:
             if all(abs(p - up) > self.min_distance_between_peaks for up in unique_peaks):
                 unique_peaks.append(p)
             if len(unique_peaks) == 3:
                 break
-        
+
         while len(unique_peaks) < 3:
             unique_peaks.append(unique_peaks[-1] + self.min_distance_between_peaks)
-        
+
         return unique_peaks
 
     def _remove_baseline(self, R: np.ndarray) -> np.ndarray:
