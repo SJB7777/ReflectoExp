@@ -1,5 +1,5 @@
+# D:\02_Projects\Dev\X-ray_AI\Reflecto\runs\exp02_one_layer\train.py
 from pathlib import Path
-
 import numpy as np
 import torch
 from torch import optim
@@ -27,9 +27,9 @@ class Trainer:
 
         self.best_val_loss = float('inf')
         self.patience_counter = 0
-        self.early_stop_patience = max(10, len(self.train_loader) // 100)
+        self.early_stop_patience = 15
 
-        print(f"학습 시작 - Device: {self.device}")
+        print(f"🚀 학습 시작 - Device: {self.device}")
 
     def train_epoch(self, epoch: int) -> float:
         self.model.train()
@@ -64,15 +64,32 @@ class Trainer:
 
         return total_loss / len(self.val_loader.dataset)
 
-    def train(self, epochs: int):
+    def train(self, epochs: int, resume_from: str | Path | None = None):
+        """학습 시작 (이어서 학습 지원)"""
+        start_epoch = 1
+        
+        # 체크포인트 로드 시도 (resume_from 우선, 없으면 best.pt 시도)
+        checkpoint_path = Path(resume_from) if resume_from else self.checkpoint_dir / "best.pt"
+        
+        if checkpoint_path.exists():
+            try:
+                start_epoch = self.load_checkpoint(checkpoint_path) + 1
+                print(f"✅ 체크포인트 로드 성공, 에포크 {start_epoch}부터 시작")
+            except Exception as e:
+                print(f"⚠️ 체크포인트 로드 실패: {e}")
+                print("처음부터 학습을 시작합니다.")
+                start_epoch = 1
+        else:
+            print("체크포인트 없음, 처음부터 학습 시작")
+
         print(f"Train: {len(self.train_loader.dataset)}, Val: {len(self.val_loader.dataset)}")
 
-        for epoch in range(1, epochs + 1):
+        for epoch in range(start_epoch, epochs + 1):
             train_loss = self.train_epoch(epoch)
             val_loss = self.validate()
 
             print(f"【Epoch {epoch:02d}】 Train Loss: {train_loss:.4f} | "
-                f"Val Loss: {val_loss:.4f} | LR: {self.optimizer.param_groups[0]['lr']:.6f}")
+                  f"Val Loss: {val_loss:.4f} | LR: {self.optimizer.param_groups[0]['lr']:.6f}")
 
             self.scheduler.step(val_loss)
 
@@ -91,14 +108,37 @@ class Trainer:
                 break
 
     def save_checkpoint(self, filename: str, epoch: int, val_loss: float):
-
+        """체크포인트 저장 (학습 상태 포함)"""
         torch.save({
             'epoch': epoch,
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
+            'scheduler_state_dict': self.scheduler.state_dict(),
             'val_loss': val_loss,
             'config': {
                 'model_class': self.model.__class__.__name__,
                 'model_args': self.model.config,
             }
         }, self.checkpoint_dir / filename)
+        print(f"Saved checkpoint: {self.checkpoint_dir / filename}")
+
+    def load_checkpoint(self, filepath: str | Path) -> int:
+        """체크포인트 로드 (에포크 번호 반환)"""
+        checkpoint = torch.load(filepath, map_location=self.device)
+        
+        # 모델 상태 로드
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        
+        # 옵티마이저 상태 로드 (없으면 스킵)
+        if 'optimizer_state_dict' in checkpoint:
+            self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        
+        # 스케줄러 상태 로드 (없으면 스킵)
+        if 'scheduler_state_dict' in checkpoint:
+            self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+            
+        self.best_val_loss = checkpoint.get('val_loss', float('inf'))
+        
+        loaded_epoch = checkpoint.get('epoch', 0)
+        print(f"✅ 체크포인트 로드 완료: {filepath} (에포크 {loaded_epoch})")
+        return loaded_epoch
