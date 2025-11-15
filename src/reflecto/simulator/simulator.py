@@ -193,7 +193,7 @@ def main() -> None:
     tth_max: float = 6.0
     q_min: float = tth2q_wavelen(tth_min, wavelen)  # (1/Å)
     q_max: float = tth2q_wavelen(tth_max, wavelen)
-    q_n: int = 100
+    q_n: int = 200
     qs: np.ndarray = np.linspace(q_min, q_max, q_n)
 
     n_layers: int = 2

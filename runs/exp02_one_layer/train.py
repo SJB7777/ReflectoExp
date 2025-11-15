@@ -29,7 +29,7 @@ class Trainer:
         self.patience_counter = 0
         self.early_stop_patience = max(10, len(self.train_loader) // 100)
 
-        print(f"🚀 학습 시작 - Device: {self.device}")
+        print(f"학습 시작 - Device: {self.device}")
 
     def train_epoch(self, epoch: int) -> float:
         self.model.train()

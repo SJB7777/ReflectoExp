@@ -2,7 +2,7 @@ from pathlib import Path
 
 # ==================== 설정 (하나의 파일에서 모두 관리) ====================
 CONFIG = {
-    "exp_name": "footprint",
+    "exp_name": "footprint2",
     "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer"),
     "param_ranges": {
         "thickness": (5.0, 200.0),
