@@ -29,7 +29,7 @@ SURFACE_SIO2: Final[Layer] = Layer(
 
 SUBSTRATE_SI: Final[Layer] = Layer(
     d=0.0,
-    f=complex(13.5, 0.05j),
+    f=complex(13.5, 0.05),
     dens=0.05,
     sigma=2.0
 )
