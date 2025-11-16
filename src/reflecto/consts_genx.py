@@ -17,7 +17,7 @@ AIR: Final[Layer] = Layer(
     d=0.0,
     f=complex(0, 0),
     dens=0.0,
-    sigma=0.0,
+    sigma=0.0
 )
 
 SURFACE_SIO2: Final[Layer] = Layer(
