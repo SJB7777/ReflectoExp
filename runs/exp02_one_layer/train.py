@@ -1,4 +1,3 @@
-# D:\02_Projects\Dev\X-ray_AI\Reflecto\runs\exp02_one_layer\train.py
 from pathlib import Path
 
 import numpy as np

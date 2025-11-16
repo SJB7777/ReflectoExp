@@ -2,7 +2,7 @@ from pathlib import Path
 
 import numpy as np
 
-from reflecto.simulate.simulator import XRRSimulator, tth2q_wavelen
+from reflecto.simulate.simul_genx import XRRSimulator, tth2q_wavelen
 
 
 def generate_1layer_data(config: dict, h5_file: Path | str):
