@@ -635,6 +635,30 @@ wheels = [
 ]
 
 [[package]]
+name = "flexcache"
+version = "0.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/55/b0/8a21e330561c65653d010ef112bf38f60890051d244ede197ddaa08e50c1/flexcache-0.3.tar.gz", hash = "sha256:18743bd5a0621bfe2cf8d519e4c3bfdf57a269c15d1ced3fb4b64e0ff4600656", size = 15816, upload-time = "2024-03-09T03:21:07.555Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/27/cd/c883e1a7c447479d6e13985565080e3fea88ab5a107c21684c813dba1875/flexcache-0.3-py3-none-any.whl", hash = "sha256:d43c9fea82336af6e0115e308d9d33a185390b8346a017564611f1466dcd2e32", size = 13263, upload-time = "2024-03-09T03:21:05.635Z" },
+]
+
+[[package]]
+name = "flexparser"
+version = "0.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/82/99/b4de7e39e8eaf8207ba1a8fa2241dd98b2ba72ae6e16960d8351736d8702/flexparser-0.4.tar.gz", hash = "sha256:266d98905595be2ccc5da964fe0a2c3526fbbffdc45b65b3146d75db992ef6b2", size = 31799, upload-time = "2024-11-07T02:00:56.249Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fe/5e/3be305568fe5f34448807976dc82fc151d76c3e0e03958f34770286278c1/flexparser-0.4-py3-none-any.whl", hash = "sha256:3738b456192dcb3e15620f324c447721023c0293f6af9955b481e91d00179846", size = 27625, upload-time = "2024-11-07T02:00:54.523Z" },
+]
+
+[[package]]
 name = "fonttools"
 version = "4.60.1"
 source = { registry = "https://pypi.org/simple" }
@@ -771,6 +795,28 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/24/7f/2747c0d332b9acfa75dc84447a066fdf812b5a6b8d30472b74d309bfe8cb/fsspec-2025.10.0.tar.gz", hash = "sha256:b6789427626f068f9a83ca4e8a3cc050850b6c0f71f99ddb4f542b8266a26a59", size = 309285, upload-time = "2025-10-30T14:58:44.036Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/eb/02/a6b21098b1d5d6249b7c5ab69dde30108a71e4e819d4a9778f1de1d5b70d/fsspec-2025.10.0-py3-none-any.whl", hash = "sha256:7c7712353ae7d875407f97715f0e1ffcc21e33d5b24556cb1e090ae9409ec61d", size = 200966, upload-time = "2025-10-30T14:58:42.53Z" },
+]
+
+[[package]]
+name = "genx3"
+version = "3.7.13"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "docutils" },
+    { name = "h5py" },
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "orsopy" },
+    { name = "pint" },
+    { name = "platformdirs" },
+    { name = "requests" },
+    { name = "scipy" },
+    { name = "svgwrite" },
+    { name = "wxpython" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f9/b0/eab50e24059139f3dd363d8d21f9cffeea557a5d9b58e291483e4be3f4e1/genx3-3.7.13.tar.gz", hash = "sha256:34c8dc84a1ae2ddabfa92fe46647e5af096ede9b5c34cd86e4ee6443e6d0984a", size = 8749356, upload-time = "2025-07-23T14:37:48.591Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d1/58/305f9e2ccec9c296f3e54cd3e2354bb6bfe285bc651387e0bb63a44cba4a/genx3-3.7.13-py3-none-any.whl", hash = "sha256:a37976f4bf9463e119466f160c40cf7fbf81093fd21e82876b0b199deee21e2d", size = 8995823, upload-time = "2025-07-23T14:37:46.634Z" },
 ]
 
 [[package]]
@@ -1951,6 +1997,21 @@ wheels = [
 ]
 
 [[package]]
+name = "pint"
+version = "0.25.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "flexcache" },
+    { name = "flexparser" },
+    { name = "platformdirs" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5f/74/bc3f671997158aef171194c3c4041e549946f4784b8690baa0626a0a164b/pint-0.25.2.tar.gz", hash = "sha256:85a45d1da8fe9c9f7477fed8aef59ad2b939af3d6611507e1a9cbdacdcd3450a", size = 254467, upload-time = "2025-11-06T22:08:09.184Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ab/88/550d41e81e6d43335603a960cd9c75c1d88f9cf01bc9d4ee8e86290aba7d/pint-0.25.2-py3-none-any.whl", hash = "sha256:ca35ab1d8eeeb6f7d9942b3cb5f34ca42b61cdd5fb3eae79531553dcca04dda7", size = 306762, upload-time = "2025-11-06T22:08:07.745Z" },
+]
+
+[[package]]
 name = "platformdirs"
 version = "4.5.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2459,6 +2520,7 @@ name = "reflecto"
 version = "0.1.1"
 source = { virtual = "." }
 dependencies = [
+    { name = "genx3" },
     { name = "h5py" },
     { name = "hydra-core" },
     { name = "ipykernel" },
@@ -2504,6 +2566,7 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "black", marker = "extra == 'dev'", specifier = ">=22.0.0" },
+    { name = "genx3" },
     { name = "h5py" },
     { name = "hydra-core" },
     { name = "ipykernel" },
@@ -2890,6 +2953,15 @@ wheels = [
 ]
 
 [[package]]
+name = "svgwrite"
+version = "1.4.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/16/c1/263d4e93b543390d86d8eb4fc23d9ce8a8d6efd146f9427364109004fa9b/svgwrite-1.4.3.zip", hash = "sha256:a8fbdfd4443302a6619a7f76bc937fc683daf2628d9b737c891ec08b8ce524c3", size = 189516, upload-time = "2022-07-14T14:05:26.107Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/84/15/640e399579024a6875918839454025bb1d5f850bb70d96a11eabb644d11c/svgwrite-1.4.3-py3-none-any.whl", hash = "sha256:bb6b2b5450f1edbfa597d924f9ac2dd099e625562e492021d7dd614f65f8a22d", size = 67122, upload-time = "2022-07-14T14:05:24.459Z" },
+]
+
+[[package]]
 name = "sympy"
 version = "1.14.0"
 source = { registry = "https://pypi.org/simple" }
@@ -3181,6 +3253,29 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/91/8d/48e227460422d3f78f52618d8ef7d7a0474c6fcdaddf7f2d1aa25854ea75/wsproto-1.3.1.tar.gz", hash = "sha256:81529992325c28f0d9b86ca66fc973da96eb80ab53410249ce2e502749c7723c", size = 50083, upload-time = "2025-11-12T07:50:48.408Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8f/da/539c2d24b13025e54a86ce3215eb9b6297b023937a087db9ef2a436cc7b4/wsproto-1.3.1-py3-none-any.whl", hash = "sha256:297ce79322989c0d286cc158681641cd18bc7632dfb38cf4054696a89179b993", size = 24402, upload-time = "2025-11-12T07:50:47.178Z" },
+]
+
+[[package]]
+name = "wxpython"
+version = "4.2.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/80/6e/b70e6dbdd7cb4f154b7ca424b4c7799f7b067f7a9f4204b8d16d6464648f/wxpython-4.2.4.tar.gz", hash = "sha256:2eb123979c87bcb329e8a2452269d60ff8f9f651e9bf25c67579e53c4ebbae3c", size = 58583054, upload-time = "2025-10-29T13:22:37.726Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/eb/83/4359885c6f390235fefffb01bec0c1aa24a61cdcdbba0e857a5dcfbd5042/wxpython-4.2.4-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:a42807f84d504554a78bf7c4d0b8b18ec72de098b578bd4276bf5144b5a698ef", size = 18773068, upload-time = "2025-10-29T04:02:17.416Z" },
+    { url = "https://files.pythonhosted.org/packages/90/d8/9d55ef72e004d70a395402391aa5f9bd362253dd560f4c934efb02abe4f6/wxpython-4.2.4-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:8b1c5f5c173a90c861f4f3453f2e066e29f258472c76d40f8e2ec16b0389971f", size = 17836963, upload-time = "2025-10-29T04:02:19.646Z" },
+    { url = "https://files.pythonhosted.org/packages/ef/1f/ddbb597c3d821d4206f85234736a4f19ef1b8875eefbf8d072ffcc01c1a4/wxpython-4.2.4-cp312-cp312-win32.whl", hash = "sha256:83e45e4d5d139638260c2f23108a94cb8d40bd5eb714d41b1009452e4ec4229a", size = 14507902, upload-time = "2025-10-29T04:02:22.309Z" },
+    { url = "https://files.pythonhosted.org/packages/90/c3/dfe74d7eb046612a3e475dce8ffda70341516129a7cb17fd60c8ae143304/wxpython-4.2.4-cp312-cp312-win_amd64.whl", hash = "sha256:c333113be1fcb4e4252890b3e66af016f03432b2fe15b370f38f2a505f5daa74", size = 16549996, upload-time = "2025-10-29T04:02:24.792Z" },
+    { url = "https://files.pythonhosted.org/packages/bb/29/5286f960de8079264e7a89ca4b4beae86844520b9521a1497c4908a8cae6/wxpython-4.2.4-cp312-cp312-win_arm64.whl", hash = "sha256:88b7e8cbdb141ebb4e361cd6f3d5595160764f0c05d2d7e03506b53860eb01ab", size = 15534326, upload-time = "2025-10-29T04:02:27.421Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/f0/f0ce54fe5ff8fb3d11cd19d69963becdc24e856b639d7e566b87690a67ad/wxpython-4.2.4-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:4ff49e0a0dd08235f00c3df26a0644bc14197ecd8c2361fcea9a7a1dffc1c8db", size = 18776857, upload-time = "2025-10-29T04:02:29.956Z" },
+    { url = "https://files.pythonhosted.org/packages/6d/a0/770a91842f65a5586f4a172cd76a770d6e0681a629144345a002f8bcb20d/wxpython-4.2.4-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:b2286456eedf8cddeb25adc375e5f4a201d35c8eee7dbb2fce1cb39acc06e809", size = 17838771, upload-time = "2025-10-29T04:02:32.273Z" },
+    { url = "https://files.pythonhosted.org/packages/26/a4/57b0110944f62ce37c4e3e5f9f1a116b6df2b7b8a3406a90b95272c211ad/wxpython-4.2.4-cp313-cp313-win32.whl", hash = "sha256:b0920fe193e2bbd90c6d3fbb9a8101f1276229638aff29f66bfe521901c3a0b8", size = 14506941, upload-time = "2025-10-29T04:02:34.513Z" },
+    { url = "https://files.pythonhosted.org/packages/77/d4/e1f63f1b4fe97a12f2dbe76feba678b2a35fd2d9d9c8c60ba94a271f01e8/wxpython-4.2.4-cp313-cp313-win_amd64.whl", hash = "sha256:a0a532ee6e6a3ce0d1fb2e223159d4b8ec42f8a844c852da936fb23cba6b9335", size = 16549467, upload-time = "2025-10-29T04:02:36.666Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/1e/df43d6fcbde2389894a068e7d41d44820a19f1bb7a78daa8fb687cd8f1a8/wxpython-4.2.4-cp313-cp313-win_arm64.whl", hash = "sha256:e82ab099df0b6c55bcfad198822648a6275bbb575ce09502a9085b290ec9852d", size = 15533173, upload-time = "2025-10-29T04:02:39.139Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/a4/4af3229c6629a6469f6a6f3a2cf060d0259c171bc446991e374717115c32/wxpython-4.2.4-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:20bdd73d51c4fcc9f026a059d95654aaf68540562faf23340a2224fdfa319798", size = 18783337, upload-time = "2025-10-29T04:02:41.328Z" },
+    { url = "https://files.pythonhosted.org/packages/e3/8f/5f1ac8e0d681cf3396acd49ce762b334f3fb754b54d96d5386e17e174eb4/wxpython-4.2.4-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:4842f9639869e455a032ef7471d974c0c8c8b7d9ba73327982d84b9d96537a08", size = 17845443, upload-time = "2025-10-29T04:02:43.551Z" },
+    { url = "https://files.pythonhosted.org/packages/72/6e/62f3c7c2f509057888ad87d141c4c77d375cfb8e4ac820654d3b972b529f/wxpython-4.2.4-cp314-cp314-win32.whl", hash = "sha256:7e7c3baa2aab55f1c0a14fdd1b371f8ec0cff1cc2f6171497643f977b243f750", size = 14848210, upload-time = "2025-10-29T04:02:45.812Z" },
+    { url = "https://files.pythonhosted.org/packages/27/e0/6d6762d2857963abc06f56fc14a605d1c69d83b0abf3a0702fcffb78bf3a/wxpython-4.2.4-cp314-cp314-win_amd64.whl", hash = "sha256:dae6d80067f64498e530d2c5f47c81f5f1a6f32e820b3b59f05062c1629ff97d", size = 16918656, upload-time = "2025-10-29T04:02:48.273Z" },
+    { url = "https://files.pythonhosted.org/packages/ff/2d/d437e56efe7e1ec5bb7af59d6651913e18e3fa9ecdacdec7a129d5285baa/wxpython-4.2.4-cp314-cp314-win_arm64.whl", hash = "sha256:f7b649542969c2221d2963695de11c74c12060e83d412f4017ba03e7787c9c5d", size = 15807097, upload-time = "2025-10-29T04:02:51.066Z" },
 ]
 
 [[package]]

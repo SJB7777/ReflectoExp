@@ -36,6 +36,7 @@ dependencies = [
     "hydra-core",
     "seaborn",
     "refl1d>=1.0.0",
+    "genx3",
 ]
 
 [[tool.uv.index]]

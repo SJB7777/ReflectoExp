@@ -8,7 +8,7 @@ from refnx.reflect import SLD, Footprint, ReflectModel
 from refnx.reflect.structure import Stack, Structure
 from tqdm import tqdm
 
-from reflecto.simulator.noise import add_noise
+from reflecto.simulate.noise import add_noise
 
 
 @dataclass
