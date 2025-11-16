@@ -12,7 +12,7 @@ def append_timestamp(path: str | Path) -> Path:
     new_name = f"{path.name}_{datetime.now():%Y%m%d_%H%M%S}"
 
     if path.suffix:
-        return path.parent / new_name + path.suffix
+        return path.parent / (new_name + path.suffix)
     return path.parent / new_name
 
 
