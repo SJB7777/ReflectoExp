@@ -1,19 +1,19 @@
 from pathlib import Path
 
 # In2O3 30nm one layer
-_mean_thickness = 300
-_mean_sld = 4.46
-_thickness_range = (_mean_thickness * 0.8, _mean_thickness * 1.2)
-_sld_range = (_mean_sld * 0.8, _mean_sld * 1.2)
+# _mean_thickness = 300
+# _mean_sld = 4.46
+# _thickness_range = (_mean_thickness * 0.8, _mean_thickness * 1.2)
+# _sld_range = (_mean_sld * 0.8, _mean_sld * 1.2)
 
 # ==================== 설정 (하나의 파일에서 모두 관리) ====================
 CONFIG = {
-    "exp_name": "genx_In2O3_simple",
+    "exp_name": "genx_In2O3_wide_range",
     "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer"),
     "param_ranges": {
-        "thickness": _thickness_range,
+        "thickness": None,
         "roughness": (0.0, 10.0),
-        "sld": _sld_range,
+        "sld": None,
     },
     "simulation": {
         "n_samples": 1_000_000,
