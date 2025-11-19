@@ -7,7 +7,7 @@ CONFIG = {
     "param_ranges": {
         "thickness": (5.0, 200.0),
         "roughness": (0.0, 10.0),
-        "sld": (0.0, 140.0),
+        "sld": (0.0, 30.0),
     },
     "simulation": {
         "n_samples": 1_000_000,

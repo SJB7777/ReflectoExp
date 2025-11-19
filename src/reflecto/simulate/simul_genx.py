@@ -9,7 +9,7 @@ from genx.models.spec_nx import Layer, Sample, Specular, Stack
 from numpy.typing import NDArray
 from tqdm import tqdm
 
-from reflecto.consts_genx import AIR, SUBSTRATE_SI, XRAY_TUBE
+from reflecto.consts_genx import AIR, SUBSTRATE_SI, XRAY_TUBE, SURFACE_SIO2
 from reflecto.simulate.noise import add_noise
 
 
@@ -52,7 +52,7 @@ def tth2q_wavelen(tth, wavelen=1.54):
 def build_sample(params: list[ParamSet]) -> Sample:
     """genx Sample를 연속 파라미터로부터 생성."""
 
-    layers: list[Layer] = []
+    layers: list[Layer] = [SURFACE_SIO2]
     for param in params:
         layer = Layer(
             param.thickness,
@@ -91,6 +91,10 @@ def calc_refl(sample: Sample, qs: np.ndarray) -> np.ndarray | None:
     return reflectivity if isinstance(reflectivity, np.ndarray) else None
 
 
+def params2refl(params, qs):
+    sample = build_sample(params)
+    return calc_refl(sample, qs)
+
 class XRRSimulator:
     def __init__(
             self,
@@ -127,12 +131,19 @@ class XRRSimulator:
 
         return thicknesses
 
+    def sample_thicknesses_uniform_with_limit(self):
+        a, b = self.thick_range
+        while True:
+            t = np.random.uniform(a, b, size=self.n_layers)
+            if t.sum() <= self.max_total_thickness:
+                return t
+
     def make_params_refl(self) -> Iterator[tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray | None]]:
         """제약 조건을 만족하는 파라미터 생성 (Rejection-Free)"""
         for _ in range(0, self.n_samples):
             # 총 두께 제한을 자동으로 만족하는 두께 샘플링
-            thicknesses = self.sample_thicknesses_divide_and_conquer()
-
+            # thicknesses = self.sample_thicknesses_divide_and_conquer()
+            thicknesses = self.sample_thicknesses_uniform_with_limit()
             # 거칠기 제약: 단일 층 두께의 3% 이하
             rough_min, rough_max = self.rough_range
             max_roughness_per_layer = np.minimum(thicknesses * 0.03, rough_max)

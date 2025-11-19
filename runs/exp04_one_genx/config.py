@@ -8,7 +8,7 @@ from pathlib import Path
 
 # ==================== 설정 (하나의 파일에서 모두 관리) ====================
 CONFIG = {
-    "exp_name": "genx_In2O3_wide_range",
+    "exp_name": "genx_In2O3_wide_range2",
     "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer"),
     "param_ranges": {
         "thickness": None,
@@ -16,7 +16,7 @@ CONFIG = {
         "sld": None,
     },
     "simulation": {
-        "n_samples": 1_000_000,
+        "n_samples": 3_000_000,
         "q_points": 200,
         "wavelength": 1.54,
         "tth_min": 0.1,
