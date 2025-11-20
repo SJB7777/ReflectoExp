@@ -9,7 +9,7 @@ XRAY_TUBE: Final[Instrument] = Instrument(
     I0=1.0,
     Ibkg=1e-10,
     res=0.005,
-    restype=ResType.full_conv_abs, # 분해능 컨볼루션
+    restype=ResType.fast_conv, # 분해능 컨볼루션
     footype=FootType.gauss
 )
 
@@ -33,11 +33,3 @@ SUBSTRATE_SI: Final[Layer] = Layer(
     dens=0.05,
     sigma=2.0
 )
-
-
-def main() -> None:
-    ...
-
-
-if __name__ == "__main__":
-    main()

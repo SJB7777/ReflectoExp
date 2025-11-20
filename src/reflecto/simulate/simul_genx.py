@@ -9,7 +9,7 @@ from genx.models.spec_nx import Layer, Sample, Specular, Stack
 from numpy.typing import NDArray
 from tqdm import tqdm
 
-from reflecto.consts_genx import AIR, SUBSTRATE_SI, XRAY_TUBE, SURFACE_SIO2
+from reflecto.consts_genx import AIR, SUBSTRATE_SI, SURFACE_SIO2, XRAY_TUBE
 from reflecto.simulate.noise import add_noise
 
 

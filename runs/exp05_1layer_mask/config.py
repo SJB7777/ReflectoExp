@@ -1,14 +1,10 @@
 from pathlib import Path
 
-# In2O3 30nm one layer
-# _mean_thickness = 300
-# _mean_sld = 4.46
-# _thickness_range = (_mean_thickness * 0.8, _mean_thickness * 1.2)
-# _sld_range = (_mean_sld * 0.8, _mean_sld * 1.2)
+from reflecto.simulate.simul_genx import tth2q_wavelen
 
 # ==================== 설정 (하나의 파일에서 모두 관리) ====================
 CONFIG = {
-    "exp_name": "I0_1",
+    "exp_name": "mask",
     "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer"),
     "param_ranges": {
         "thickness": None,
@@ -16,11 +12,11 @@ CONFIG = {
         "sld": None,
     },
     "simulation": {
-        "n_samples": 3_000_000,
-        "q_points": 200,
+        "n_samples": int(1e6),
+        "q_points": 250,
         "wavelength": 1.54,
-        "tth_min": 0.1,
-        "tth_max": 6.0,
+        "q_min": tth2q_wavelen(0.1),
+        "q_max": tth2q_wavelen(15),
     },
     "model": {
         "n_channels": 64,
@@ -36,3 +32,9 @@ CONFIG = {
         "val_ratio": 0.2,
     },
 }
+
+
+if __name__ == "__main__":
+    from pprint import pprint
+
+    pprint(CONFIG)
