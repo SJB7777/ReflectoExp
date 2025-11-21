@@ -101,9 +101,9 @@ class XRRSimulator:
             qs: np.ndarray,
             n_layers:int,
             n_samples: int,
-            thickness_range: tuple[float, float] = (30.0, 100.0),
-            roughness_range: tuple[float, float] = (0.0, 10.0),
-            sld_range: tuple[float, float] = (0.5, 10.0),
+            thickness_range: tuple[float, float] = (10.0, 500.0),
+            roughness_range: tuple[float, float] = (0.0, 50.0),
+            sld_range: tuple[float, float] = (0.5, 20.0),
             max_total_thickness: float = 250,
             has_noise: bool = True,
             ):
@@ -146,7 +146,7 @@ class XRRSimulator:
             thicknesses = self.sample_thicknesses_uniform_with_limit()
             # 거칠기 제약: 단일 층 두께의 3% 이하
             rough_min, rough_max = self.rough_range
-            max_roughness_per_layer = np.minimum(thicknesses * 0.03, rough_max)
+            max_roughness_per_layer = np.minimum(thicknesses * 0.1, rough_max)
             roughnesses = np.random.uniform(rough_min, max_roughness_per_layer, self.n_layers)
 
             slds = np.random.uniform(*self.sld_range, self.n_layers)
