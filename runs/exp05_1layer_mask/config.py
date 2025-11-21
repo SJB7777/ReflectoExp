@@ -5,7 +5,7 @@ from reflecto.simulate.simul_genx import tth2q_wavelen
 # ==================== 설정 (하나의 파일에서 모두 관리) ====================
 CONFIG = {
     "exp_name": "mask",
-    "base_dir": Path(r"D:\Members\IsaacYong\Data\XRR_AI\one_layer"),
+    "base_dir": Path(r"D:\Members\IsaacYong\Data\XRR_AI\one_layer_hidden512"),
     "param_ranges": {
         "thickness": None,
         "roughness": None,
@@ -21,7 +21,7 @@ CONFIG = {
     "model": {
         "n_channels": 64,
         "depth": 4,
-        "mlp_hidden": 256,
+        "mlp_hidden": 512,
         "dropout": 0.1,
     },
     "training": {
