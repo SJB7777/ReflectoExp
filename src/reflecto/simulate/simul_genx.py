@@ -51,8 +51,16 @@ def tth2q_wavelen(tth, wavelen=1.54):
 
 def build_sample(params: list[ParamSet]) -> Sample:
     """genx Sample를 연속 파라미터로부터 생성."""
+    # TODO: 산화막
+    sio_d = np.random.uniform(10, 30)
+    sio2 = Layer(
+    d=sio_d,
+    f=complex(np.random.uniform(10, 21), 0),
+    dens=1,
+    sigma=np.maximum(np.random.uniform(1, 8), sio_d*0.1),
+    )
 
-    layers: list[Layer] = [SURFACE_SIO2]
+    layers: list[Layer] = [sio2]
     for param in params:
         layer = Layer(
             param.thickness,

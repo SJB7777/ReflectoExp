@@ -4,11 +4,11 @@ from reflecto.simulate.simul_genx import tth2q_wavelen
 
 # ==================== 설정 (하나의 파일에서 모두 관리) ====================
 CONFIG = {
-    "exp_name": "mask",
+    "exp_name": "sio2_random",
     "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer"),
     "param_ranges": {
         "thickness": None,
-        "roughness": (0.0, 10.0),
+        "roughness": None,
         "sld": None,
     },
     "simulation": {
