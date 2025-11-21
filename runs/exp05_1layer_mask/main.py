@@ -41,7 +41,7 @@ def get_dataloaders(config: dict, h5_file: Path, stats_file: Path):
     dataset_kwargs = {
         "h5_file": h5_file,
         "stats_file": stats_file,
-        "val_ratio": config["training"].get("val_ratio", 0.2),
+        "val_ratio": config["training"]["val_ratio"],
         "test_ratio": config["training"].get("test_ratio", 0.1),
         "q_min": config["simulation"].get("q_min", 0.0),
         "q_max": config["simulation"].get("q_max", 0.5),
