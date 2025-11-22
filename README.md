@@ -41,11 +41,8 @@ uv pip install -e .
 ## 🚀 Quick Start
 
 ```bash
-# Navigate to experiment directory
-cd runs/exp05_1layer_mask
-
 # Run entire pipeline (data generation → training → evaluation)
-python main.py
+python runs/exp05_1layer_mask/main.py
 ```
 
 That's it! The script automatically handles data generation, model training, and evaluation.
