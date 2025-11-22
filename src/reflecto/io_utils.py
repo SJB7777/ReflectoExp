@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
-
+from numpy import ndarray
 
 def append_timestamp(path: Path | str) -> Path:
     """
@@ -53,9 +53,18 @@ def next_unique_file(path: Path | str) -> Path:
 
     return parent / f"{stem}({max_n + 1}){suffix}"
 
-def load_xrr_dat(file: Path | str) -> tuple[pd.array, pd.array]:
+def load_xrr_dat(file: Path | str) -> tuple[ndarray, ndarray]:
     """
     Load 2 column .dat file.
+    Handles values enclosed in parentheses like '(1.00)'.
     """
-    df = pd.read_csv(file, header=None, sep="\\s+", names=["tth", "R"])
-    return df["tth"], df["R"]
+
+    df = pd.read_csv(file, header=None, sep=r"\s+", names=["tth", "R"], dtype=str)
+
+    df["tth"] = df["tth"].str.replace(r"[\(\)]", "", regex=True)
+    df["R"] = df["R"].str.replace(r"[\(\)]", "", regex=True)
+
+    tth = pd.to_numeric(df["tth"], errors='coerce').to_numpy()
+    R = pd.to_numeric(df["R"], errors='coerce').to_numpy()
+
+    return tth, R

@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import numpy as np
 import torch
 from config import CONFIG
 from dataset import XRRPreprocessor
