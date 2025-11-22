@@ -29,7 +29,7 @@ class ParamSet:
         return f"{self.__class__.__name__}({', '.join(formatted)})"
 
 
-def tth2q_wavelen[T: (float, np.ndarray)](tth: T, wavelen: float = 1.54) -> T:
+def tth2q[T: (float, np.ndarray)](tth: T, wavelen: float = 1.54) -> T:
     """
     Convert 2θ (in degrees) and wavelength (in Å) to scattering vector q (in 1/Å).
     tth: degree
@@ -191,8 +191,8 @@ def main() -> None:
     wavelen: float = 1.54  # (nm)
     tth_min: float = 1.0   # degree
     tth_max: float = 6.0
-    q_min: float = tth2q_wavelen(tth_min, wavelen)  # (1/Å)
-    q_max: float = tth2q_wavelen(tth_max, wavelen)
+    q_min: float = tth2q(tth_min, wavelen)  # (1/Å)
+    q_max: float = tth2q(tth_max, wavelen)
     q_n: int = 200
     qs: np.ndarray = np.linspace(q_min, q_max, q_n)
 

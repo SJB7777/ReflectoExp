@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class XRR1DRegressor(nn.Module):
-    def __init__(self, q_len: int, input_channels: int = 2, output_dim: int = 3, n_channels: int = 64, depth: int = 4,
+    def __init__(self, q_len: int, input_channels: int = 2, output_dim: int = 6, n_channels: int = 64, depth: int = 4,
         mlp_hidden: int = 256, dropout: float = 0.1):
         """
         XRR 1D CNN Regressor
@@ -11,7 +11,7 @@ class XRR1DRegressor(nn.Module):
         Args:
             q_len: Length of input q grid (n_points). Used for config logging.
             input_channels: Number of input channels (Default 2: [Reflectivity, Mask]).
-            output_dim: Number of parameters to predict (Default 3: [d, sigma, sld]).
+            output_dim: Number of parameters to predict (Default 6: [d, sigma, sld, sio2_d, sio2_sigma, sio2_sld]).
             n_channels: Number of output channels for the first CNN layer.
             depth: Depth of the CNN encoder (number of conv blocks).
             mlp_hidden: Hidden size of the MLP regressor.

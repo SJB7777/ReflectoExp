@@ -3,13 +3,16 @@ from pathlib import Path
 from reflecto.physics_utils import tth2q
 
 CONFIG = {
-    "exp_name": "test",
+    "exp_name": "test_2",
     # "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer"),
     "base_dir": Path(r"D:\data\XRR_AI\mask"),
     "param_ranges": {
         "thickness": None,
         "roughness": None,
         "sld": None,
+        "sio2_thickness": None,
+        "sio2_roughness": None,
+        "sio2_sld": None,
     },
     "simulation": {
         "n_samples": int(1e3),

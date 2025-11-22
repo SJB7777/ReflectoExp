@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 from numpy import ndarray
 
+
 def append_timestamp(path: Path | str) -> Path:
     """
     Append a timestamp to a path (file or directory) to make it unique.

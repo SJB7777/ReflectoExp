@@ -71,17 +71,18 @@ def run_xrr_analysis(
 
     if verbose:
         print("[Step 1] Neural Network Inference...")
-
-    pred_d, pred_sig, pred_sld = inference_engine.predict(q_raw, R_raw)
+    preds = inference_engine.predict(q_raw, R_raw)
+    pred_f_d, pred_f_sig, pred_f_sld = preds[0], preds[1], preds[2]
+    pred_s_d, pred_s_sig, pred_s_sld = preds[3], preds[4], preds[5]
 
     if verbose:
         print("   >>> NN Prediction:")
-        print(f"       Thickness : {pred_d:.2f} Å")
-        print(f"       Roughness : {pred_sig:.2f} Å")
-        print(f"       SLD       : {pred_sld:.3f} (10⁻⁶ Å⁻²)")
+        print(f"       [Film] Thickness: {pred_f_d:.2f}, Rough: {pred_f_sig:.2f}, SLD: {pred_f_sld:.3f}")
+        print(f"       [SiO2] Thickness: {pred_s_d:.2f}, Rough: {pred_s_sig:.2f}, SLD: {pred_s_sld:.3f}")
 
     # GenXFitter용 파라미터 객체 생성
-    nn_initial_params = ParamSet(pred_d, pred_sig, pred_sld)
+    film_params = ParamSet(pred_f_d, pred_f_sig, pred_f_sld)
+    sio2_params = ParamSet(pred_s_d, pred_s_sig, pred_s_sld)
 
     # ---------------------------------------------------------
     # 3. GenX 정밀 피팅 (GenX Refinement)
@@ -89,7 +90,7 @@ def run_xrr_analysis(
     if verbose:
         print("\n[Step 2] GenX Fitting (Optimization)...")
 
-    fitter = GenXFitter(q_raw, R_raw, nn_initial_params)
+    fitter = GenXFitter(q_raw, R_raw, film_params, sio2_params)
 
     # 피팅 실행
     final_results = fitter.run(verbose=verbose)
@@ -110,7 +111,7 @@ def run_xrr_analysis(
 
     # 결과 반환
     return {
-        "nn_preds": (pred_d, pred_sig, pred_sld),
+        "nn_preds": preds,
         "final_params": final_results,
         "fitter": fitter,
         "q": q_raw,
@@ -140,6 +141,7 @@ def main():
 
     except Exception as e:
         print(f"오류 발생: {e}")
+
 
 if __name__ == "__main__":
     main()

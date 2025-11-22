@@ -8,8 +8,8 @@ from pathlib import Path
 
 # ==================== 설정 (하나의 파일에서 모두 관리) ====================
 CONFIG = {
-    "exp_name": "I0_1",
-    "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer"),
+    "exp_name": "test",
+    "base_dir": Path(r"D:\data\XRR_AI\mask"),
     "param_ranges": {
         "thickness": None,
         "roughness": (0.0, 10.0),

@@ -14,7 +14,7 @@ class GenXFitter:
     - Input: Readable SLD values (e.g., 2.07, 18.8)
     - Internal: Automatically handles physical unit conversion (1e-6 * r_e)
     """
-    def __init__(self, q: np.ndarray, R: np.ndarray, nn_params: ParamSet):
+    def __init__(self, q: np.ndarray, R: np.ndarray, film_params: ParamSet, sio2_params: ParamSet):
         """
         Args:
             q (array): Momentum transfer [1/A]
@@ -25,10 +25,12 @@ class GenXFitter:
         self.R = R / R.max()
 
         # 1. 입력값 정리 (Human Readable Scale로 통일)
-        self.init_d = float(nn_params.thickness)
-        self.init_sigma = float(nn_params.roughness)
-        self.init_sld = float(nn_params.sld)
-
+        self.init_d = float(film_params.thickness)
+        self.init_sigma = float(film_params.roughness)
+        self.init_sld = float(film_params.sld)
+        self.init_sio2_d = float(sio2_params.thickness)
+        self.init_sio2_sigma = float(sio2_params.roughness)
+        self.init_sio2_sld = float(sio2_params.sld)
         self.model = self._build_model()
 
     def _build_model(self):
@@ -41,9 +43,6 @@ class GenXFitter:
 
         model = Model()
         model.data = DataList([ds])
-
-        # --- Hardcoded Initial Guesses for SiO2 ---
-        sio_d, sio_sig, sio_sld = 15.0, 3.0, 18.8
 
         # --- Script Generation ---
         script = rf"""
@@ -60,9 +59,9 @@ class Sim_Vars:
         self.f_sig = {self.init_sigma}
         self.f_sld = {self.init_sld}
 
-        self.s_d   = {sio_d}
-        self.s_sig = {sio_sig}
-        self.s_sld = {sio_sld}
+        self.s_d   = {self.init_sio2_d}
+        self.s_sig = {self.init_sio2_sigma}
+        self.s_sld = {self.init_sio2_sld}
 
         self.i0    = 1.0
 
