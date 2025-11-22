@@ -230,17 +230,21 @@ class PhysicsLayer(nn.Module):
 
 
 if __name__ == '__main__':
-    from reflecto.simulate.simulator import XRRSimulator, tth2q_wavelen
+    from reflecto.physics_utils import tth2q
+    from reflecto.simulate.simulator import XRRSimulator
 
     wavelen: float = 1.54  # (nm)
     tth_min: float = 0.2   # degree
     tth_max: float = 6.0
     tth_n: int = 300
     tths: np.ndarray = np.linspace(tth_min, tth_max, tth_n)
-    qs: np.ndarray = tth2q_wavelen(tths, wavelen)
+    qs: np.ndarray = tth2q(tths, wavelen)
 
     xrr_simulator = XRRSimulator(qs, 2, 1)
-    thicknesses, roughnesses, slds, refl = next(xrr_simulator.make_params_refl())
+    films, sio2, refl = next(xrr_simulator.generate_batch())
+    thicknesses = [f.thickness for f in films]
+    roughnesses = [f.roughness for f in films]
+    slds = [f.sld for f in films]
     refl_tensor = torch.tensor(np.log10(refl), dtype=torch.float32).unsqueeze(0)  # (1, Q)
     qs_tensor = torch.tensor(qs, dtype=torch.float32)
 

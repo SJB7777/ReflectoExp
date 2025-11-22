@@ -1,6 +1,7 @@
 import numpy as np
 
-from reflecto.simulate.simulator import ParamSet, XRRSimulator, tth2q_wavelen
+from reflecto.physics_utils import tth2q
+from reflecto.simulate.simulator import ParamSet, XRRSimulator
 
 
 def generate_dummy_xrr(qs, param: ParamSet):
@@ -20,8 +21,8 @@ if __name__ == '__main__':
     wavelen: float = 1.54  # (nm)
     tth_min: float = 1.0   # degree
     tth_max: float = 6.0
-    q_min: float = tth2q_wavelen(tth_min, wavelen)  # (1/Å)
-    q_max: float = tth2q_wavelen(tth_max, wavelen)
+    q_min: float = tth2q(tth_min, wavelen)  # (1/Å)
+    q_max: float = tth2q(tth_max, wavelen)
     print(q_min, q_max)
     q_n: int = 200
     qs: np.ndarray = np.linspace(q_min, q_max, q_n)

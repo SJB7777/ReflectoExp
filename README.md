@@ -58,7 +58,8 @@ runs/
 ├── exp02_one_layer/       # Regression for single layer (RefNX)
 ├── exp03_physics_fused/   # Physics-guided learning (experimental)
 ├── exp04_one_genx/        # Regression for single layer (GenX)
-└── exp05_1layer_mask      
+├── exp05_1layer_mask/
+└── exp06_1lay_6out/
 ```
 
 **Each experiment contains:**

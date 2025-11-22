@@ -1,15 +1,14 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
-from typing import overload
 
 import h5py
 import numpy as np
 from genx.models.spec_nx import Layer, Sample, Specular, Stack
-from numpy.typing import NDArray
 from tqdm import tqdm
 
-from reflecto.consts_genx import AIR, SUBSTRATE_SI, XRAY_TUBE
+from reflecto.consts_genx import AIR, SURFACE_SIO2, XRAY_TUBE
+from reflecto.physics_utils import r_e
 from reflecto.simulate.noise import add_noise
 
 
@@ -22,8 +21,23 @@ class ParamSet:
     def to_numpy(self) -> np.ndarray:
         return np.array([self.thickness, self.roughness, self.sld], dtype=np.float64)
 
+    @classmethod
+    def from_genx_layer(cls, layer: Layer) -> "ParamSet":
+        """
+        GenX Layer 객체를 ParamSet으로 변환합니다.
+        f (scattering factor)를 SLD (10^-6 A^-2) 단위로 역변환합니다.
+        Formula: SLD_val = (f.real * dens * r_e) * 1e6
+        """
+        # f는 복소수이므로 실수부(real)만 취함 (전자밀도 관련)
+        sld_val = (layer.f.real * layer.dens * r_e) * 1e6
+
+        return cls(
+            thickness=float(layer.d),
+            roughness=float(layer.sigma),
+            sld=float(sld_val)
+        )
+
     def __format__(self, format_spec: str) -> str:
-        """클래스 전체에 포매팅 명령어 적용 (.3f, .2f 등)"""
         formatted = [
             f"{name}={getattr(self, name):{format_spec}}"
             for name in self.__dataclass_fields__.keys()
@@ -31,148 +45,136 @@ class ParamSet:
         return f"{self.__class__.__name__}({', '.join(formatted)})"
 
 
-@overload
-def tth2q_wavelen(tth: float, wavelen: float = 1.54) -> float: ...
-
-@overload
-def tth2q_wavelen(tth: NDArray[np.float64], wavelen: float = 1.54) -> NDArray[np.float64]: ...
-
-def tth2q_wavelen(tth, wavelen=1.54):
+def get_f(sld_1e6: float) -> complex:
     """
-    Convert 2θ (in degrees) and wavelength (in Å) to scattering vector q (in 1/Å).
+    Convert SLD (10^-6 A^-2) to Scattering Factor (f).
+    Assuming density = 1.0 for GenX calculation.
+    Formula: f = SLD / (rho * r_e)
     """
-    th_rad = np.deg2rad(0.5 * tth)
-    result = (4 * np.pi / wavelen) * np.sin(th_rad)
-
-    if isinstance(tth, (int, float)):
-        return float(result)
-    return result
+    return complex((sld_1e6 * 1e-6) / r_e, 0)
 
 
-def build_sample(params: list[ParamSet]) -> Sample:
-    """genx Sample를 연속 파라미터로부터 생성."""
-    # TODO: 산화막
-    sio_d = np.random.uniform(10, 30)
-    sio2 = Layer(
-    d=sio_d,
-    f=complex(np.random.uniform(10, 21), 0),
-    dens=1,
-    sigma=np.maximum(np.random.uniform(1, 8), sio_d*0.1),
+def build_sample(film_params: list[ParamSet], sio2_param: ParamSet) -> Sample:
+    """
+    Create GenX Sample with explicit Si Substrate.
+    Structure: Si Substrate -> Film -> Surface SiO2 -> Ambient
+    """
+
+    # Substrate roughness is typically small (e.g., 3.0 A).
+    si_substrate = Layer(
+        d=0.0,              # Substrate thickness is infinite/irrelevant in XRR
+        f=get_f(2.07),      # Si SLD = 2.07
+        dens=1.0,
+        sigma=3.0           # Interface roughness between Si and Film
     )
 
-    layers: list[Layer] = [sio2]
-    for param in params:
-        layer = Layer(
-            param.thickness,
-            f = complex(param.sld, 0),
-            dens=1,
+    sio2_layer = Layer(
+        d=sio2_param.thickness,
+        f=get_f(sio2_param.sld),
+        dens=1.0,
+        sigma=sio2_param.roughness
+    )
+
+    layers = [sio2_layer]
+    for param in film_params:
+        layers.append(
+            Layer(
+            d=param.thickness,
+            f=get_f(param.sld),
+            dens=1.0,
             sigma=param.roughness
             )
-        layers.append(layer)
+        )
+
     stack = Stack(Layers=layers, Repetitions=1)
+
     sample = Sample(
         Stacks=[stack],
         Ambient=AIR,
-        Substrate=SUBSTRATE_SI
+        Substrate=si_substrate
     )
-
     return sample
 
-def calc_refl(sample: Sample, qs: np.ndarray) -> np.ndarray | None:
-    """
-    Compute reflectivity including beam footprint correction.
 
-    Parameters
-    ----------
-    structure : refnx.reflect.Structure
-        The interfacial structure.
-    q : np.ndarray
-        Momentum transfer values (Å⁻¹).
-
-    Returns
-    -------
-    np.ndarray
-        Reflectivity values corrected for beam footprint.
+def calc_refl(sample: Sample, qs: np.ndarray) -> np.ndarray:
     """
-    # 1. 기본 ReflectModel 계산
+    Compute reflectivity.
+    Raises RuntimeError if simulation fails.
+    """
     reflectivity = Specular(qs, sample, XRAY_TUBE)
-    return reflectivity if isinstance(reflectivity, np.ndarray) else None
+
+    if not isinstance(reflectivity, np.ndarray):
+        raise RuntimeError(f"GenX Simulation Failed. Return value: {reflectivity}")
+
+    return reflectivity
 
 
-def params2refl(params, qs):
-    sample = build_sample(params)
+def param2refl(qs: np.ndarray, film_params: list[ParamSet], sio2_param: ParamSet | None = None) -> np.ndarray:
+    if sio2_param is None:
+        sio2_param = ParamSet.from_genx_layer(SURFACE_SIO2)
+    sample = build_sample(film_params, sio2_param)
     return calc_refl(sample, qs)
+
 
 class XRRSimulator:
     def __init__(
             self,
             qs: np.ndarray,
-            n_layers:int,
             n_samples: int,
+            n_layers: int,
+            # Ranges
             thickness_range: tuple[float, float] = (10.0, 500.0),
-            roughness_range: tuple[float, float] = (0.0, 50.0),
-            sld_range: tuple[float, float] = (0.5, 20.0),
-            max_total_thickness: float = 250,
+            roughness_range: tuple[float, float] = (0.0, 20.0),
+            sld_range: tuple[float, float] = (5.0, 20.0),
+            sio2_thick_range: tuple[float, float] = (10.0, 25.0),
+            sio2_rough_range: tuple[float, float] = (2.0, 5.0),
+            sio2_sld_mean: float = 18.8,
             has_noise: bool = True,
             ):
-        self.qs = qs
-        self.n_layers = n_layers
-        self.n_samples = n_samples
 
-        self.thick_range = thickness_range    # Å
-        self.rough_range = roughness_range  # Å, 주로 0-10Å 세밀
-        self.sld_range = sld_range    # x1e-6 Å^-2
-        self.max_total_thickness = max_total_thickness
+        self.qs = qs
+        self.n_samples = n_samples
+        self.n_layers = n_layers
+        self.t_min, self.t_max = thickness_range
+        self.r_min, self.r_max = roughness_range
+        self.s_min, self.s_max = sld_range
+
+        self.st_min, self.st_max = sio2_thick_range
+        self.sr_min, self.sr_max = sio2_rough_range
+        self.sio2_sld_mean = sio2_sld_mean
 
         self.has_noise = has_noise
 
-    def sample_thicknesses_divide_and_conquer(self) -> np.ndarray:
-        """Dirichlet 분포를 사용하여 균일한 두께 샘플링"""
-        min_total = self.n_layers * self.thick_range[0]
-        total_thickness = np.random.uniform(min_total, self.max_total_thickness)
+    def generate_batch(self) -> Iterator[tuple[list[ParamSet], ParamSet, np.ndarray]]:
+        """Generator for (Film_Params, SiO2_Params, Reflectivity)"""
 
-        proportions = np.random.dirichlet(np.ones(self.n_layers))
-        thicknesses = total_thickness * proportions
+        for _ in range(self.n_samples):
+            # 1. Main Film
+            film_params: list[ParamSet] = []
+            for _ in range(self.n_layers):
+                f_d = np.random.uniform(self.t_min, self.t_max)
+                max_r = min(self.r_max, f_d * 0.3)
+                f_sig = np.random.uniform(self.r_min, max_r)
+                f_sld = np.random.uniform(self.s_min, self.s_max)
+                film_params.append(ParamSet(f_d, f_sig, f_sld))
 
-        # 안전장치: 범위를 벗어나는 경우 클리핑
-        thicknesses = np.clip(thicknesses, *self.thick_range)
+            # 2. SiO2
+            s_d = np.random.uniform(self.st_min, self.st_max)
+            s_sig = np.random.uniform(self.sr_min, self.sr_max)
+            s_sld = np.random.normal(self.sio2_sld_mean, 0.5)
+            sio2_p = ParamSet(s_d, s_sig, s_sld)
 
-        return thicknesses
+            # 3. Simulate
+            try:
+                refl = param2refl(self.qs, film_params, sio2_p)
+            except RuntimeError as e:
+                print(f"[Simulation Error] Skipping sample: {e}")
+                raise e
 
-    def sample_thicknesses_uniform_with_limit(self):
-        a, b = self.thick_range
-        while True:
-            t = np.random.uniform(a, b, size=self.n_layers)
-            if t.sum() <= self.max_total_thickness:
-                return t
+            if self.has_noise:
+                refl = add_noise(refl)
 
-    def make_params_refl(self) -> Iterator[tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray | None]]:
-        """제약 조건을 만족하는 파라미터 생성 (Rejection-Free)"""
-        for _ in range(0, self.n_samples):
-            # 총 두께 제한을 자동으로 만족하는 두께 샘플링
-            # thicknesses = self.sample_thicknesses_divide_and_conquer()
-            thicknesses = self.sample_thicknesses_uniform_with_limit()
-            # 거칠기 제약: 단일 층 두께의 3% 이하
-            rough_min, rough_max = self.rough_range
-            max_roughness_per_layer = np.minimum(thicknesses * 0.1, rough_max)
-            roughnesses = np.random.uniform(rough_min, max_roughness_per_layer, self.n_layers)
-
-            slds = np.random.uniform(*self.sld_range, self.n_layers)
-            params: list[ParamSet] = []
-            for t, r, s in zip(thicknesses, roughnesses, slds, strict=True):
-                params.append(ParamSet(t, r, s))
-
-            refl = self.simulate_one(params, has_noise=self.has_noise)
-
-            yield thicknesses, roughnesses, slds, refl
-
-    def simulate_one(self, params, has_noise=True) -> np.ndarray | None:
-        structure = build_sample(params)
-        refl = calc_refl(structure, self.qs)
-        if refl is None:
-            return None
-        self.refl = add_noise(refl) if has_noise else refl
-        return self.refl
+            yield film_params, sio2_p, refl
 
     def save_hdf5(self, file: str | Path, show_progress: bool = True) -> None:
         file = Path(file)
@@ -183,57 +185,59 @@ class XRRSimulator:
             d_thick = hf.create_dataset("thickness", (self.n_samples, self.n_layers), dtype='f4')
             d_rough = hf.create_dataset("roughness", (self.n_samples, self.n_layers), dtype='f4')
             d_sld = hf.create_dataset("sld", (self.n_samples, self.n_layers), dtype='f4')
-            d_refl = hf.create_dataset(
-                "R", (self.n_samples, len(self.qs)), dtype='f4'
-                )
 
-            iterator = self.make_params_refl()
+            d_s_thick = hf.create_dataset("sio2_thickness", (self.n_samples, 1), dtype='f4')
+            d_s_rough = hf.create_dataset("sio2_roughness", (self.n_samples, 1), dtype='f4')
+            d_s_sld = hf.create_dataset("sio2_sld", (self.n_samples, 1), dtype='f4')
+
+            d_refl = hf.create_dataset("R", (self.n_samples, len(self.qs)), dtype='f4')
+
+            iterator = self.generate_batch()
             if show_progress:
-                iterator = tqdm(
-                    iterator,
-                    total= self.n_samples,
-                    desc="Saving HDF5",
-                    dynamic_ncols=True,
-                )
+                iterator = tqdm(iterator, total=self.n_samples, desc="Simulating", dynamic_ncols=True)
 
-            for i, (thicknesses, roughnesses, slds, refl) in enumerate(iterator):
+            for i, (fps, sp, r) in enumerate(iterator):
+                d_thick[i] = np.array([fp.thickness for fp in fps])
+                d_rough[i] = np.array([fp.roughness for fp in fps])
+                d_sld[i] = np.array([fp.sld for fp in fps])
 
-                d_thick[i] = thicknesses
-                d_rough[i] = roughnesses
-                d_sld[i] = slds
-                d_refl[i] = refl
+                d_s_thick[i] = sp.thickness
+                d_s_rough[i] = sp.roughness
+                d_s_sld[i]   = sp.sld
+
+                d_refl[i] = r
 
 
-def main() -> int | None:
+def main():
+    # Test Execution
     import matplotlib.pyplot as plt
-    root: Path = Path(r"D:\03_Resources\Data\XRR_AI\data")
-    root.mkdir(parents=True, exist_ok=True)
-    file: Path = root / "xrr_data.h5"
-    # Measurement Configurations
-    wavelen: float = 1.54  # (nm)
-    tth_min: float = 0.1   # degree
-    tth_max: float = 6.0
-    q_min: float = tth2q_wavelen(tth_min, wavelen)  # (1/Å)
-    q_max: float = tth2q_wavelen(tth_max, wavelen)
-    q_n: int = 200
-    qs: np.ndarray = np.linspace(q_min, q_max, q_n)
 
-    mean_thickness = 300
-    mean_sld = 4.46
-    thickness_range = (mean_thickness * 0.8, mean_thickness * 1.2)
-    sld_range = (mean_sld * 0.8, mean_sld * 1.2)
-    n_layers: int = 2
-    n_samples: int = 1_000_000
-    xrr_simulator: XRRSimulator = XRRSimulator(qs, n_layers, n_samples, has_noise=False, thickness_range=thickness_range, sld_range=sld_range)
-    thicknesses, roughnesses, slds, refl = next(xrr_simulator.make_params_refl())
-    print(thicknesses, roughnesses, slds)
-    if refl is None:
-        return 1
-    fig = plt.figure(figsize=(6,6))
-    ax = fig.add_subplot(1,1,1)
-    ax.plot(qs, refl)
-    ax.set_yscale("log")
-    plt.show()
+    qs = np.linspace(0.0, 0.5, 200)
+
+    sim = XRRSimulator(
+        qs=qs,
+        n_samples=5,
+        n_layers=2,
+        thickness_range=(50, 150),
+        roughness_range=(0, 5),
+        sld_range=(8, 12),
+        has_noise=False
+    )
+
+    print("Testing Simulation...")
+    for films, sio2, refl in sim.generate_batch():
+        print(f"Films: {films}")
+        print(f"SiO2: {sio2}")
+
+        plt.figure(figsize=(6,4))
+        plt.plot(qs, refl)
+        plt.yscale('log')
+        title: str = f"SiO2: {sio2:.2g}\n"
+        title += "\n".join(f"{i}: {film:.2g}" for i, film in enumerate(films, 1))
+        plt.title(title)
+        plt.tight_layout()
+        plt.show()
+        break
 
 
 if __name__ == "__main__":

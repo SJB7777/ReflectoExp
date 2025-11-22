@@ -198,10 +198,6 @@ def evaluate_pipeline(
     # Load Model
     ckpt = torch.load(checkpoint_path, map_location=device)
     model_args = ckpt.get('config', {}).get('model_args', {})
-    if 'input_channels' not in model_args:
-        model_args['input_channels'] = 2
-    if "output_dim" not in model_args:
-        model_args['output_dim'] = 3
 
     model = XRR1DRegressor(**model_args).to(device)
     model.load_state_dict(ckpt['model_state_dict'])
@@ -223,7 +219,10 @@ def evaluate_pipeline(
     metrics = calculate_metrics(preds_np, targets_np)
 
     # Define parameter names (ensure this matches model output dimension)
-    param_names = ["Thickness (Å)", "Roughness (Å)", "SLD (10⁻⁶ Å⁻²)"]
+    param_names = [
+        "Thickness (Å)", "Roughness (Å)", "SLD (10⁻⁶ Å⁻²)",
+        "SiO2 Thickness (Å)", "SiO2 Roughness (Å)", "SiO2 SLD (10⁻⁶ Å⁻²)"
+    ]
 
     # Create Master DataFrame
     results_df = generate_results_df(preds_np, targets_np, metrics['errors'], param_names)
