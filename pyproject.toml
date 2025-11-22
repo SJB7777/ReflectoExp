@@ -25,7 +25,6 @@ dependencies = [
     "scikit-learn",
     "scipy",
     "tqdm",
-    "refnx",
     "h5py",
     "ipykernel",
     "pydantic",
@@ -35,7 +34,6 @@ dependencies = [
     "torchaudio",
     "hydra-core",
     "seaborn",
-    "refl1d>=1.0.0",
     "genx3",
 ]
 

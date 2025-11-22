@@ -2,9 +2,12 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 from xrr_model import XRR1DRegressor
+
+from reflecto.math_utils import fom_log
 
 
 def calculate_metrics(preds: np.ndarray, targets: np.ndarray):
@@ -29,7 +32,8 @@ def calculate_metrics(preds: np.ndarray, targets: np.ndarray):
         "errors": errors,
         "mae": mae,
         "rmse": rmse,
-        "mape": mape
+        "mape": mape,
+        "fom": fom_log(targets, preds)
     }
 
 def plot_results(preds, targets, errors, param_names, save_path):
@@ -82,6 +86,34 @@ def plot_results(preds, targets, errors, param_names, save_path):
         print(f"📊 리포트 그래프 저장 완료: {save_path}")
     plt.close()
 
+
+def export_evaluation_csv(preds, targets, errors, param_names, save_path):
+    """
+    Evaluation results -> Pandas DataFrame -> CSV Export
+    """
+    data = {}
+
+    # Organize data column by column
+    for i, name in enumerate(param_names):
+        # Clean column names (optional: remove units for cleaner headers if needed)
+        clean_name = name.split(' (')[0]
+
+        data[f"{clean_name}_True"] = targets[:, i]
+        data[f"{clean_name}_Pred"] = preds[:, i]
+        data[f"{clean_name}_Error"] = errors[:, i]
+        data[f"{clean_name}_AbsErr"] = np.abs(errors[:, i])
+    # Create DataFrame
+    df = pd.DataFrame(data)
+
+    # Save to CSV
+    if save_path:
+        save_path = Path(save_path)
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+
+        df.to_csv(save_path, index=False, encoding='utf-8-sig') # utf-8-sig handles Greek symbols like Å correctly in Excel
+        print(f"💾 Data Exported: {save_path}")
+
+
 def run_inference_loop(model, test_loader, device):
     """모델 추론 루프 (Normalization 상태의 출력 반환)"""
     model.eval()
@@ -102,8 +134,13 @@ def run_inference_loop(model, test_loader, device):
 
     return torch.cat(all_preds), torch.cat(all_targets)
 
-def evaluate_pipeline(test_loader: DataLoader, checkpoint_path: Path | str,
-                      stats_path: Path | str, report_file: Path | str = None):
+def evaluate_pipeline(
+    test_loader: DataLoader,
+    checkpoint_path: Path | str,
+    stats_path: Path | str,
+    report_file: Path | str | None = None,
+    report_csv: Path | str | None = None
+):
     """
     전체 평가 파이프라인
     로드 -> 추론 -> 역정규화 -> 지표계산 -> 시각화
@@ -127,7 +164,8 @@ def evaluate_pipeline(test_loader: DataLoader, checkpoint_path: Path | str,
     model_args = ckpt.get('config', {}).get('model_args', {})
 
     # 호환성 처리
-    if 'input_channels' not in model_args: model_args['input_channels'] = 2
+    if 'input_channels' not in model_args:
+        model_args['input_channels'] = 2
 
     model = XRR1DRegressor(**model_args).to(device)
     model.load_state_dict(ckpt['model_state_dict'])
@@ -160,7 +198,8 @@ def evaluate_pipeline(test_loader: DataLoader, checkpoint_path: Path | str,
     # 7. 시각화
     if report_file:
         plot_results(preds_np, targets_np, metrics['errors'], param_names, report_file)
-
+    if report_csv:
+        export_evaluation_csv(preds_np, targets_np, metrics['errors'], param_names, report_csv)
 # =========================================================================
 # 실행부 (Main)
 # =========================================================================
@@ -173,7 +212,8 @@ if __name__ == "__main__":
     h5_file = exp_dir / "dataset.h5"
     stats_file = exp_dir / "stats.pt"
     checkpoint_file = exp_dir / "best.pt"
-    report_file = exp_dir / "evaluation_report.png"
+    report_file_img = exp_dir / "evaluation_report.png"
+    report_file_csv = exp_dir / "evaluation_results.csv"
 
     if h5_file.exists():
         # 테스트 데이터셋 로드
@@ -184,10 +224,12 @@ if __name__ == "__main__":
             n_points=CONFIG["simulation"]["q_points"]
         )
 
-        test_loader = DataLoader(test_set, batch_size=CONFIG["training"]["batch_size"],
-                                 shuffle=False, num_workers=0)
+        test_loader = DataLoader(
+            test_set, batch_size=CONFIG["training"]["batch_size"],
+            shuffle=False, num_workers=0
+        )
 
         # 평가 실행
-        evaluate_pipeline(test_loader, checkpoint_file, stats_file, report_file)
+        evaluate_pipeline(test_loader, checkpoint_file, stats_file, report_file_img, report_file_csv)
     else:
         print("테스트할 데이터셋 파일이 없습니다.")

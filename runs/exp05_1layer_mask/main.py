@@ -83,8 +83,8 @@ def main():
     h5_file = exp_dir / "dataset.h5"
     stats_file = exp_dir / "stats.pt"
     checkpoint_file = exp_dir / "best.pt"
-    report_file = exp_dir / "error_distribution.png"
-
+    report_file_img = exp_dir / "error_distribution.png"
+    report_file_csv = exp_dir / "evaluation_results.csv"
     # 2. 데이터 준비
     ensure_data_exists(CONFIG, h5_file)
 
@@ -125,7 +125,13 @@ def main():
 
     # 베스트 체크포인트가 없으면(학습 실패 등) 예외 처리
     if checkpoint_file.exists():
-        evaluate_pipeline(test_loader, checkpoint_file, stats_file, report_file)
+        evaluate_pipeline(
+            test_loader,
+            checkpoint_file,
+            stats_file,
+            report_file_img,
+            report_file_csv
+            )
     else:
         print("경고: 베스트 체크포인트 파일이 없어 평가를 건너뜁니다.")
 
