@@ -4,15 +4,15 @@ from reflecto.simulate.simul_genx import tth2q_wavelen
 
 # ==================== 설정 (하나의 파일에서 모두 관리) ====================
 CONFIG = {
-    "exp_name": "test",
-    "base_dir": Path(r"D:\data\XRR_AI\one_layer"),
+    "exp_name": "sio2_random2",
+    "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer"),
     "param_ranges": {
         "thickness": None,
         "roughness": None,
         "sld": None,
     },
     "simulation": {
-        "n_samples": int(1e3),
+        "n_samples": int(1e6),
         "q_points": 250,
         "wavelength": 1.54,
         "q_min": tth2q_wavelen(0.1),
