@@ -1,13 +1,11 @@
-import sys
 from pathlib import Path
-import matplotlib.pyplot as plt
-import numpy as np
 
-from config import CONFIG
+from fitting_engine import GenXFitter
+
 from reflecto.io_utils import load_xrr_dat
 from reflecto.simulate.simul_genx import tth2q_wavelen
 from runs.exp05_1layer_mask.inference import XRRInferenceEngine
-from fitting_engine import GenXFitter
+
 
 def main():
     # =========================================================
@@ -15,7 +13,7 @@ def main():
     # =========================================================
     # 분석하고 싶은 데이터 파일 경로를 입력하세요
     target_data_path = Path(r"D:\03_Resources\Data\XRR_AI\XRR_data\sample_test.dat")
-    
+
     # NN 모델 가중치가 있는 폴더 (import 경로에 맞춰 설정)
     nn_weights_dir = Path("runs/exp05_1layer_mask")
 

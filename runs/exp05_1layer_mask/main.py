@@ -4,7 +4,8 @@ import numpy as np
 import torch
 from config import CONFIG
 from dataset import XRR1LayerDataset
-from evaluate import load_checkpoint_and_evaluate
+from evaluate import evaluate_pipeline
+
 from torch.utils.data import DataLoader
 from train import Trainer
 from xrr_model import XRR1DRegressor
@@ -42,10 +43,10 @@ def get_dataloaders(config: dict, h5_file: Path, stats_file: Path):
         "h5_file": h5_file,
         "stats_file": stats_file,
         "val_ratio": config["training"]["val_ratio"],
-        "test_ratio": config["training"].get("test_ratio", 0.1),
-        "q_min": config["simulation"].get("q_min", 0.0),
-        "q_max": config["simulation"].get("q_max", 0.5),
-        "n_points": config["simulation"].get("q_points", 200),
+        "test_ratio": config["training"]["test_ratio"],
+        "q_min": config["simulation"]["q_min"],
+        "q_max": config["simulation"]["q_max"],
+        "n_points": config["simulation"]["q_points"],
         "augment": True,      # 학습 시 데이터 자르기 활성화
         "aug_prob": 0.5,
         "min_scan_range": 0.15
@@ -61,11 +62,11 @@ def get_dataloaders(config: dict, h5_file: Path, stats_file: Path):
     num_workers = config["training"].get("num_workers", 0)
 
     train_loader = DataLoader(train_set, batch_size=batch_size, shuffle=True,
-                              num_workers=num_workers, pin_memory=True)
+        num_workers=num_workers, pin_memory=True)
     val_loader   = DataLoader(val_set, batch_size=batch_size, shuffle=False,
-                              num_workers=num_workers)
+        num_workers=num_workers)
     test_loader  = DataLoader(test_set, batch_size=batch_size, shuffle=False,
-                              num_workers=num_workers)
+        num_workers=num_workers)
 
     print(f"데이터셋 크기: Train={len(train_set)}, Val={len(val_set)}, Test={len(test_set)}")
     return train_loader, val_loader, test_loader
@@ -124,7 +125,7 @@ def main():
 
     # 베스트 체크포인트가 없으면(학습 실패 등) 예외 처리
     if checkpoint_file.exists():
-        load_checkpoint_and_evaluate(test_loader, checkpoint_file, stats_file, report_file)
+        evaluate_pipeline(test_loader, checkpoint_file, stats_file, report_file)
     else:
         print("경고: 베스트 체크포인트 파일이 없어 평가를 건너뜁니다.")
 
