@@ -30,6 +30,7 @@ CONFIG = {
         "lr": 0.002,
         "weight_decay": 1e-4,
         "val_ratio": 0.2,
+        "test_ratio": 0.1,
     },
 }
 
