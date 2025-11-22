@@ -3,7 +3,7 @@ from pathlib import Path
 from reflecto.simulate.simul_genx import tth2q_wavelen
 
 CONFIG = {
-    "exp_name": "sio2_random3",
+    "exp_name": "1000p",
     "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer"),
     "param_ranges": {
         "thickness": None,
@@ -12,7 +12,7 @@ CONFIG = {
     },
     "simulation": {
         "n_samples": int(1e6),
-        "q_points": 250,
+        "q_points": 1000,
         "wavelength": 1.54,
         "q_min": tth2q_wavelen(0.1),
         "q_max": tth2q_wavelen(15),
