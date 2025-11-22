@@ -4,7 +4,7 @@ from reflecto.simulate.simul_genx import tth2q_wavelen
 
 # ==================== 설정 (하나의 파일에서 모두 관리) ====================
 CONFIG = {
-    "exp_name": "sio2_random",
+    "exp_name": "sio2_random2",
     "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer"),
     "param_ranges": {
         "thickness": None,
@@ -25,10 +25,10 @@ CONFIG = {
         "dropout": 0.1,
     },
     "training": {
-        "batch_size": 128,
+        "batch_size": 512,
         "epochs": 50,
-        "lr": 0.001,
-        "weight_decay": 1e-5,
+        "lr": 0.002,
+        "weight_decay": 1e-4,
         "val_ratio": 0.2,
     },
 }
