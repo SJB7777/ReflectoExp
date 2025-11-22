@@ -17,12 +17,32 @@ Automated extraction of thin film parameters (thickness, roughness, electron den
 - Real-time analysis (seconds)
 
 ---
+## Preperation before use
+### Windows
+
+```bash
+# Install uv
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex
+
+# Clone Repository
+git clone https://github.com/SJB7777/reflecto
+
+# Make virtual environment
+uv venv --python 3.13
+.venv/scripts/activate
+
+# Install packages
+uv sync
+uv run python -m ipykernel install --user --name=my-env --display-name="reflecto"
+uv pip install -e .
+```
+---
 
 ## 🚀 Quick Start
 
 ```bash
 # Navigate to experiment directory
-cd runs/exp02_one_layer
+cd runs/exp05_1layer_mask
 
 # Run entire pipeline (data generation → training → evaluation)
 python main.py

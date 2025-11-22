@@ -21,7 +21,7 @@ CONFIG = {
     "model": {
         "n_channels": 64,
         "depth": 4,
-        "mlp_hidden": 512,
+        "mlp_hidden": 256,
         "dropout": 0.1,
     },
     "training": {
