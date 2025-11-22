@@ -2,8 +2,10 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+import pandas as pd
 
-def append_timestamp(path: str | Path) -> Path:
+
+def append_timestamp(path: Path | str) -> Path:
     """
     Append a timestamp to a path (file or directory) to make it unique.
     The exact naming format is not fixed.
@@ -50,3 +52,10 @@ def next_unique_file(path: Path | str) -> Path:
                 max_n = n
 
     return parent / f"{stem}({max_n + 1}){suffix}"
+
+def load_xrr_dat(file: Path | str) -> tuple[pd.array, pd.array]:
+    """
+    Load 2 column .dat file.
+    """
+    df = pd.read_csv(file, header=None, sep="\\s+", names=["tth", "R"])
+    return df["tth"], df["R"]

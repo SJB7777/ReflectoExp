@@ -134,36 +134,49 @@ def Sim(data):
 
         # 2. SiO2
         p_s_d = pars.append("v.s_d", model)
-        p_s_d.value = 15.0; p_s_d.min = 5.0; p_s_d.max = 50.0
+        p_s_d.value = 15.0
+        p_s_d.min = 5.0
+        p_s_d.max = 50.0
 
         p_s_sig = pars.append("v.s_sig", model)
-        p_s_sig.value = 3.0; p_s_sig.min = 0.0; p_s_sig.max = 10.0
+        p_s_sig.value = 3.0
+        p_s_sig.min = 0.0
+        p_s_sig.max = 10.0
 
         p_s_sld = pars.append("v.s_sld", model)
-        p_s_sld.value = 18.8; p_s_sld.min = 10.0; p_s_sld.max = 25.0
+        p_s_sld.value = 18.8
+        p_s_sld.min = 10.0
+        p_s_sld.max = 25.0
 
         # 3. Instrument
         p_i0 = pars.append("v.i0", model)
-        p_i0.value = 1.0; p_i0.min = 0.1; p_i0.max = 100.0
+        p_i0.value = 1.0
+        p_i0.min = 0.1
+        p_i0.max = 100.0
 
         model.parameters = pars
 
         # --- Step 1: I0 Fitting ---
-        if verbose: print("\n[GenX] Step 1: Fitting I0 (Linear)...")
+        if verbose:
+            print("\n[GenX] Step 1: Fitting I0 (Linear)...")
         model.set_fom_func(fom_funcs.diff)
 
-        for p in pars: p.fit = False
+        for p in pars:
+            p.fit = False
         p_i0.fit = True
 
         res1 = model.bumps_fit(method="amoeba", steps=200)
         model.bumps_update_parameters(res1)
-        if verbose: print(f"  -> I0 Fitted: {p_i0.value:.4f}")
+        if verbose:
+            print(f"  -> I0 Fitted: {p_i0.value:.4f}")
 
         # --- Step 2: Full Fitting ---
-        if verbose: print("[GenX] Step 2: Fitting All Params (Log)...")
+        if verbose:
+            print("[GenX] Step 2: Fitting All Params (Log)...")
         model.set_fom_func(fom_funcs.log)
 
-        for p in pars: p.fit = True
+        for p in pars:
+            p.fit = True
 
         # Differential Evolution
         res2 = model.bumps_fit(method="de", steps=800, pop=15, tol=0.002)
