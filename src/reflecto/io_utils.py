@@ -56,15 +56,18 @@ def next_unique_file(path: Path | str) -> Path:
 def load_xrr_dat(file: Path | str) -> tuple[ndarray, ndarray]:
     """
     Load 2 column .dat file.
-    Handles values enclosed in parentheses like '(1.00)'.
+    Any non-numeric values (including '(1.00)') are converted to 0.0.
     """
-
+    # 1. 모든 데이터를 일단 문자열로 읽어옵니다 (파싱 에러 방지)
     df = pd.read_csv(file, header=None, sep=r"\s+", names=["tth", "R"], dtype=str)
 
-    df["tth"] = df["tth"].str.replace(r"[\(\)]", "", regex=True)
-    df["R"] = df["R"].str.replace(r"[\(\)]", "", regex=True)
+    # 2. 숫자로 변환 시도
+    # errors='coerce': 숫자가 아닌 것((1.00) 포함)은 전부 NaN(Not a Number)으로 변환
+    tth_series = pd.to_numeric(df["tth"], errors='coerce')
+    R_series = pd.to_numeric(df["R"], errors='coerce')
 
-    tth = pd.to_numeric(df["tth"], errors='coerce').to_numpy()
-    R = pd.to_numeric(df["R"], errors='coerce').to_numpy()
+    # 3. NaN을 0.0으로 채우고 numpy 배열로 변환
+    tth = tth_series.fillna(0.0).to_numpy()
+    R = R_series.fillna(0.0).to_numpy()
 
     return tth, R
