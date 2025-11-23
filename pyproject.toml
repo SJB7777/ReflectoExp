@@ -35,6 +35,7 @@ dependencies = [
     "hydra-core",
     "seaborn",
     "genx3",
+    "bumps>=1.0.3",
 ]
 
 [[tool.uv.index]]

@@ -103,9 +103,11 @@ def main():
     checkpoint_file = exp_dir / "best.pt"
     report_file_img = exp_dir / "error_distribution.png"
     report_file_csv = exp_dir / "evaluation_results.csv"
+    report_history_img = exp_dir / "training_history.png"
     config_file_json = exp_dir / "config.json"
+
     save_config(CONFIG, config_file_json)
-    print(f"config file saved at '{config_file_json}'")
+    print(f"Config file saved at '{config_file_json}'")
     # 2. Data Preparation
     ensure_data_exists(CONFIG, h5_file)
 
@@ -155,7 +157,8 @@ def main():
         checkpoint_path=checkpoint_file,
         stats_path=stats_file,
         report_img_path=report_file_img,
-        report_csv_path=report_file_csv
+        report_csv_path=report_file_csv,
+        report_history_path=report_history_img
     )
 
 

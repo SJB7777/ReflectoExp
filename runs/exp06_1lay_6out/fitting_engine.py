@@ -108,8 +108,8 @@ SiO2 = Layer(d=v.get_s_d(), sigma=v.get_s_sig(), f=to_f(v.get_s_sld()), dens=1)
 
 sample = Sample(Stacks=[Stack(Layers=[Film, SiO2])], Ambient=Amb, Substrate=Sub)
 
-inst = Instrument(probe=Probe.xray, wavelength=1.54, coords=Coords.q, 
-    I0=v.get_i0(), Ibkg=1e-10, res=0.002, 
+inst = Instrument(probe=Probe.xray, wavelength=1.54, coords=Coords.q,
+    I0=v.get_i0(), Ibkg=1e-10, res=0.002,
     restype=ResType.fast_conv, footype=FootType.gauss)
 
 # [4] 시뮬레이션 루프 (파라미터 동기화)
@@ -139,7 +139,8 @@ def Sim(data):
         # --- Parameters Registration ---
         # 1. Film (NN Prediction based)
         p_f_d = pars.append("v.set_f_d", model)
-        p_f_d.min = max(1.0, self.init_d * 0.5); p_f_d.max = self.init_d * 1.5
+        p_f_d.min = max(1.0, self.init_d * 0.5)
+        p_f_d.max = self.init_d * 1.5
 
         p_f_sig = pars.append("v.set_f_sig", model)
         p_f_sig.min = 0.0

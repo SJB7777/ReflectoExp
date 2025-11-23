@@ -133,6 +133,43 @@ def save_results_plot(
     plt.close()
 
 
+def save_history_plot(history: dict, save_path: Path) -> None:
+    """
+    Visualize training history (Loss curves and Learning Rate) and save as an image.
+    """
+    if not save_path or not history:
+        return
+
+    epochs = range(1, len(history['train']) + 1)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+
+    # 1. Loss Curve
+    ax1.plot(epochs, history['train'], label='Train Loss', color='blue', linewidth=2)
+    ax1.plot(epochs, history['val'], label='Val Loss', color='orange', linewidth=2)
+    ax1.set_xlabel('Epochs')
+    ax1.set_ylabel('Loss (MSE)')
+    ax1.set_title('Training & Validation Loss')
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+
+    # 2. Learning Rate Curve
+    if 'lr' in history and len(history['lr']) > 0:
+        ax2.plot(epochs, history['lr'], label='Learning Rate', color='green', linestyle='--')
+        ax2.set_xlabel('Epochs')
+        ax2.set_ylabel('Learning Rate')
+        ax2.set_title('Learning Rate Schedule')
+        ax2.set_yscale('log')
+        ax2.legend()
+        ax2.grid(True, alpha=0.3, which="both")
+
+    plt.tight_layout()
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(save_path, dpi=150)
+    print(f"Saved History Plot: {save_path}")
+    plt.close()
+
+
 def run_inference(model: torch.nn.Module, loader: DataLoader, device: torch.device) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Execute model inference on the given loader.
@@ -166,7 +203,8 @@ def print_metrics_table(metrics: dict[str, np.ndarray], param_names: list[str]) 
         mae = metrics['mae'][i]
         rmse = metrics['rmse'][i]
         mape = metrics['mape'][i]
-        print(f"{name:<20} | {mae:<10.4f} | {rmse:<10.4f} | {mape:<10.2f}")
+        fom = metrics['fom'][i]
+        print(f"{name:<20} | {mae:<10.4f} | {rmse:<10.4f} | {mape:<10.2f} | {fom:10.2f}")
 
     print("=" * 65)
 
@@ -176,7 +214,8 @@ def evaluate_pipeline(
     checkpoint_path: Path,
     stats_path: Path,
     report_img_path: Path | None = None,
-    report_csv_path: Path | None = None
+    report_csv_path: Path | None = None,
+    report_history_path: Path | None = None
 ) -> None:
     """
     Orchestrates the full evaluation process:
@@ -198,6 +237,8 @@ def evaluate_pipeline(
     # Load Model
     ckpt = torch.load(checkpoint_path, map_location=device)
     model_args = ckpt.get('config', {}).get('model_args', {})
+
+    history = ckpt.get('history', {})
 
     model = XRR1DRegressor(**model_args).to(device)
     model.load_state_dict(ckpt['model_state_dict'])
@@ -236,6 +277,9 @@ def evaluate_pipeline(
     if report_img_path:
         save_results_plot(results_df, param_names, report_img_path)
 
+    if report_history_path and history:
+        save_history_plot(history, report_history_path)
+
 
 def main():
     # Configuration & Paths
@@ -246,6 +290,7 @@ def main():
 
     report_file_img = exp_dir / "evaluation_report.png"
     report_file_csv = exp_dir / "evaluation_results.csv"
+    report_history_img = exp_dir / "training_history.png"
 
     if not h5_file.exists():
         print("Dataset file not found. Cannot proceed.")
@@ -272,7 +317,8 @@ def main():
         checkpoint_path=checkpoint_file,
         stats_path=stats_file,
         report_img_path=report_file_img,
-        report_csv_path=report_file_csv
+        report_csv_path=report_file_csv,
+        report_history_path=report_history_img
     )
 
 

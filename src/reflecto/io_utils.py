@@ -56,19 +56,32 @@ def next_unique_file(path: Path | str) -> Path:
 
 def load_xrr_dat(file: Path | str) -> tuple[ndarray, ndarray]:
     """
-    Load 2 column .dat file.
-    Any non-numeric values (including '(1.00)') are converted to 0.0.
+    Load 2 column .dat file (2-theta, Intensity).
+
+    Features:
+    - Skips lines starting with '#' automatically.
+    - Handles scientific notation (e.g., 1.0e-05) automatically.
+    - Handles variable whitespace separators.
+    - Converts non-numeric garbage to 0.0 safely.
     """
-    # 1. 모든 데이터를 일단 문자열로 읽어옵니다 (파싱 에러 방지)
-    df = pd.read_csv(file, header=None, sep=r"\s+", names=["tth", "R"], dtype=str)
 
-    # 2. 숫자로 변환 시도
-    # errors='coerce': 숫자가 아닌 것((1.00) 포함)은 전부 NaN(Not a Number)으로 변환
-    tth_series = pd.to_numeric(df["tth"], errors='coerce')
-    R_series = pd.to_numeric(df["R"], errors='coerce')
+    # 1. read_csv의 파라미터를 활용해 한 번에 파싱
+    # comment='#': #으로 시작하는 줄이나, 데이터 뒤에 붙은 # 주석을 무시함
+    # sep=r"\s+": 탭, 공백 등 길이가 다른 공백도 분리자로 인식
+    df = pd.read_csv(
+        file,
+        header=None,
+        sep=r"\s+",
+        comment='#',
+        names=["tth", "R"]
+    )
 
-    # 3. NaN을 0.0으로 채우고 numpy 배열로 변환
-    tth = tth_series.fillna(0.0).to_numpy()
-    R = R_series.fillna(0.0).to_numpy()
+    # 2. 숫자가 아닌 데이터(Garbage)가 섞여 있을 경우를 대비한 안전장치
+    # (이미 comment='#'로 대부분 걸러지지만, 혹시 모를 텍스트 찌꺼기 처리)
+    df = df.apply(pd.to_numeric, errors='coerce')
 
-    return tth, R
+    # 3. NaN(변환 실패한 값)을 0.0으로 채우고 Numpy 변환
+    # 원본 데이터 순서를 보장하기 위해 fillna 사용
+    df = df.fillna(0.0)
+
+    return df["tth"].to_numpy(), df["R"].to_numpy()

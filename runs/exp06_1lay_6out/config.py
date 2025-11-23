@@ -1,10 +1,12 @@
 import json
 from pathlib import Path
 
+import numpy as np
+
 from reflecto.physics_utils import tth2q
 
 CONFIG = {
-    "exp_name": "q2000",
+    "exp_name": "test",
     # "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer"),
     "base_dir": Path(r"D:\data\XRR_AI\mask"),
     "param_ranges": {
@@ -16,8 +18,8 @@ CONFIG = {
         "sio2_sld": None,
     },
     "simulation": {
-        "n_samples": int(1e6),
-        "q_points": 2000,
+        "n_samples": int(1e4),
+        "q_points": 1000,
         "wavelength": 1.54,
         "q_min": tth2q(0.1),
         "q_max": tth2q(15),
@@ -29,7 +31,7 @@ CONFIG = {
         "dropout": 0.1,
     },
     "training": {
-        "batch_size": 256,
+        "batch_size": 64,
         "epochs": 50,
         "lr": 0.002,
         "weight_decay": 1e-4,
@@ -88,8 +90,6 @@ def save_config(config: dict, file: Path | str):
 
     with open(save_path, "w", encoding="utf-8") as f:
         json.dump(safe_config, f, indent=4, ensure_ascii=False)
-
-    print(f"✅ Config saved (with repr fallback): {save_path}")
 
 
 if __name__ == "__main__":
