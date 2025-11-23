@@ -107,14 +107,14 @@ class XRR1LayerDataset(Dataset):
         self.aug_prob = aug_prob
         self.min_scan_range = min_scan_range
 
-        self.hf = None
-        # 3. Load Data
+        self.hf: h5py.File | None = None
+        # Load Data
         self._load_h5_data()
 
-        # 4. Data Split
+        # Data Split
         self._setup_split(val_ratio, test_ratio)
 
-        # 5. Setup Normalization Statistics
+        # Setup Normalization Statistics
         self.processor = XRRPreprocessor(q_min, q_max, n_points)
         self._setup_param_stats()
         self.processor.load_stats(self.stats_path)
