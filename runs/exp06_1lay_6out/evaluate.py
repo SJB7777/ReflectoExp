@@ -298,10 +298,7 @@ def main():
 
     # Dataset Preparation
     test_set = XRR1LayerDataset(
-        h5_file, stats_file, mode="test",
-        q_min=CONFIG["simulation"]["q_min"],
-        q_max=CONFIG["simulation"]["q_max"],
-        n_points=CONFIG["simulation"]["q_points"]
+        qs, h5_file, stats_file, mode="test",
     )
 
     test_loader = DataLoader(

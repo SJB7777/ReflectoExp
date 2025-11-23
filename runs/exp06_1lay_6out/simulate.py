@@ -5,7 +5,7 @@ import numpy as np
 from reflecto.simulate.simul_genx import XRRSimulator
 
 
-def generate_1layer_data(config: dict, h5_file: Path | str):
+def generate_1layer_data(qs: np.ndarray, config: dict, h5_file: Path | str):
     """
     1-layer XRR 데이터 생성
 
@@ -21,11 +21,6 @@ def generate_1layer_data(config: dict, h5_file: Path | str):
     # 출력 디렉토리 생성
     output_dir = h5_file.parent
     output_dir.mkdir(exist_ok=True, parents=True)
-
-    # q 벡터 생성
-    q_min = simulation["q_min"]
-    q_max = simulation["q_max"]
-    qs = np.linspace(q_min, q_max, simulation["q_points"])
 
     simulator_args: dict = {
         "qs": qs,
@@ -58,4 +53,17 @@ def generate_1layer_data(config: dict, h5_file: Path | str):
 
 
 if __name__ == "__main__":
-    pass
+    from config import CONFIG
+
+    from reflecto.math_utils import powerspace
+
+    exp_dir = Path(CONFIG["base_dir"]) / CONFIG["exp_name"]
+    exp_dir.mkdir(parents=True, exist_ok=True)
+
+    h5_file = exp_dir / "dataset.h5"
+    qs: np.ndarray = powerspace(
+        CONFIG["simulation"]["q_min"],
+        CONFIG["simulation"]["q_max"],
+        CONFIG["simulation"]["q_points"],
+        CONFIG["simulation"]["power"])
+    generate_1layer_data(qs, CONFIG, h5_file)

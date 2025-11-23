@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 from train import Trainer
 from xrr_model import XRR1DRegressor
 
+from reflecto.math_utils import powerspace
 
 def set_seed(seed: int = 42):
     """Fix random seed for reproducibility."""
@@ -23,14 +24,14 @@ def set_seed(seed: int = 42):
     print(f"Seed set to {seed}")
 
 
-def ensure_data_exists(config: dict, h5_path: Path):
+def ensure_data_exists(qs: np.ndarray, config: dict, h5_path: Path):
     """Run simulation if data file does not exist."""
     if not h5_path.exists():
         print(f"Data file not found: {h5_path}")
         print("Running simulation to generate data...")
         h5_path.parent.mkdir(parents=True, exist_ok=True)
 
-        simulate.generate_1layer_data(config, h5_path)
+        simulate.generate_1layer_data(qs, config, h5_path)
         print("Data generation complete.")
 
     else:
@@ -105,11 +106,15 @@ def main():
     report_file_csv = exp_dir / "evaluation_results.csv"
     report_history_img = exp_dir / "training_history.png"
     config_file_json = exp_dir / "config.json"
-
+    qs: np.ndarray = powerspace(
+        CONFIG["simulation"]["q_min"],
+        CONFIG["simulation"]["q_max"],
+        CONFIG["simulation"]["q_points"],
+        CONFIG["simulation"]["power"])
     save_config(CONFIG, config_file_json)
     print(f"Config file saved at '{config_file_json}'")
     # 2. Data Preparation
-    ensure_data_exists(CONFIG, h5_file)
+    ensure_data_exists(qs, CONFIG, h5_file)
 
     # 3. Create Loaders
     train_loader, val_loader, test_loader = get_dataloaders(CONFIG, h5_file, stats_file)

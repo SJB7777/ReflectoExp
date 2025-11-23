@@ -12,14 +12,12 @@ class XRRPreprocessor:
     (Used by both Dataset and InferenceEngine)
     """
     def __init__(self,
-        q_min: float,
-        q_max: float,
-        n_points: int,
+        qs: np.ndarray,
         stats_file: Path | str | None = None,
         device: torch.device = torch.device('cpu')
     ):
         # 1. Set up Master Grid
-        self.target_q = np.linspace(q_min, q_max, n_points).astype(np.float32)
+        self.target_q = qs
         self.device = device
         self.param_mean = None
         self.param_std = None
@@ -90,9 +88,8 @@ class XRR1LayerDataset(Dataset):
     """
 
     def __init__(
-        self, h5_file: str | Path, stats_file: str | Path,
+        self, qs: np.ndarray, h5_file: str | Path, stats_file: str | Path,
         mode: str = "train", val_ratio: float = 0.2, test_ratio: float = 0.1,
-        q_min: float = 0.0, q_max: float = 0.5, n_points: int = 200,
         augment: bool = False, aug_prob: float = 0.5, min_scan_range: float = 0.15
     ):
 
@@ -101,8 +98,7 @@ class XRR1LayerDataset(Dataset):
         self.mode = mode
 
         # Grid & Augmentation
-        self.target_q = np.linspace(q_min, q_max, n_points).astype(np.float32)
-        self.n_points = n_points
+        self.target_q = qs
         self.augment = augment and (mode == 'train')
         self.aug_prob = aug_prob
         self.min_scan_range = min_scan_range
@@ -115,7 +111,7 @@ class XRR1LayerDataset(Dataset):
         self._setup_split(val_ratio, test_ratio)
 
         # Setup Normalization Statistics
-        self.processor = XRRPreprocessor(q_min, q_max, n_points)
+        self.processor = XRRPreprocessor(self.target_q)
         self._setup_param_stats()
         self.processor.load_stats(self.stats_path)
 
