@@ -38,18 +38,16 @@ def ensure_data_exists(qs: np.ndarray, config: dict, h5_path: Path):
         print(f"Data file found: {h5_path}")
 
 
-def get_dataloaders(config: dict, h5_file: Path, stats_file: Path):
+def get_dataloaders(qs: np.ndarray, config: dict, h5_file: Path, stats_file: Path):
     """Create Dataset and DataLoaders."""
 
     # Common arguments (Get q-related settings from Config)
     dataset_kwargs = {
+        "qs": qs,
         "h5_file": h5_file,
         "stats_file": stats_file,
         "val_ratio": config["training"]["val_ratio"],
         "test_ratio": config["training"]["test_ratio"],
-        "q_min": config["simulation"]["q_min"],
-        "q_max": config["simulation"]["q_max"],
-        "n_points": config["simulation"]["q_points"],
         "augment": True,
         "aug_prob": 0.5,
         "min_scan_range": 0.15
