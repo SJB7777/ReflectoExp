@@ -6,7 +6,7 @@ import numpy as np
 from reflecto.physics_utils import tth2q
 
 CONFIG = {
-    "exp_name": "test",
+    "exp_name": "q2000",
     # "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer"),
     "base_dir": Path(r"D:\data\XRR_AI\mask"),
     "param_ranges": {
@@ -18,8 +18,8 @@ CONFIG = {
         "sio2_sld": None,
     },
     "simulation": {
-        "n_samples": int(1e4),
-        "q_points": 1000,
+        "n_samples": int(1e6),
+        "q_points": 2000,
         "wavelength": 1.54,
         "q_min": tth2q(0.1),
         "q_max": tth2q(15),
