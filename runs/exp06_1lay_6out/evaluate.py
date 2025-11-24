@@ -9,7 +9,7 @@ from dataset import XRR1LayerDataset
 from torch.utils.data import DataLoader
 from xrr_model import XRR1DRegressor
 
-from reflecto.math_utils import fom_log
+from reflecto.math_utils import powerspace
 
 
 def calculate_metrics(preds: np.ndarray, targets: np.ndarray) -> dict[str, np.ndarray]:
@@ -34,7 +34,6 @@ def calculate_metrics(preds: np.ndarray, targets: np.ndarray) -> dict[str, np.nd
         "mae": mae,
         "rmse": rmse,
         "mape": mape,
-        "fom": fom_log(targets, preds)
     }
 
 
@@ -203,8 +202,7 @@ def print_metrics_table(metrics: dict[str, np.ndarray], param_names: list[str]) 
         mae = metrics['mae'][i]
         rmse = metrics['rmse'][i]
         mape = metrics['mape'][i]
-        fom = metrics['fom'][i]
-        print(f"{name:<20} | {mae:<10.4f} | {rmse:<10.4f} | {mape:<10.2f} | {fom:10.2f}")
+        print(f"{name:<20} | {mae:<10.4f} | {rmse:<10.4f} | {mape:<10.2f}")
 
     print("=" * 65)
 
@@ -295,7 +293,11 @@ def main():
     if not h5_file.exists():
         print("Dataset file not found. Cannot proceed.")
         return
-
+    qs: np.ndarray = powerspace(
+        CONFIG["simulation"]["q_min"],
+        CONFIG["simulation"]["q_max"],
+        CONFIG["simulation"]["q_points"],
+        CONFIG["simulation"]["power"])
     # Dataset Preparation
     test_set = XRR1LayerDataset(
         qs, h5_file, stats_file, mode="test",

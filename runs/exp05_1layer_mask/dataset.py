@@ -12,17 +12,13 @@ class XRRPreprocessor:
     (Used by both Dataset and InferenceEngine)
     """
     def __init__(self,
-        q_min: float,
-        q_max: float,
-        n_points: int,
+        qs: np.ndarray,
         stats_file: Path | str | None = None,
         device: torch.device = torch.device('cpu')
     ):
         # 1. Set up Master Grid
-        self.target_q = np.linspace(q_min, q_max, n_points).astype(np.float32)
+        self.target_q = qs
         self.device = device
-
-        # 2. Load statistics (if available)
         self.param_mean = None
         self.param_std = None
 
@@ -40,27 +36,21 @@ class XRRPreprocessor:
         Raw Data (q, R) -> Model Input Tensor (2, N)
         Operation: Normalization + Interpolation + Masking
         """
-        # 1. Normalize R (Max Norm -> Log10)
         R_max = np.max(R_raw)
         R_norm = R_raw / (R_max + 1e-15)
         R_log = np.log10(np.maximum(R_norm, 1e-15))
 
-        # 2. Sort (Reverse if q is in descending order)
+        # Sort (Reverse if q is in descending order)
         if q_raw[0] > q_raw[-1]:
             q_raw = q_raw[::-1]
             R_log = R_log[::-1]
 
-        # 3. Interpolation (Master Grid)
         R_interp = np.interp(self.target_q, q_raw, R_log, left=0.0, right=0.0)
-
-        # 4. Masking
         q_valid_mask = (self.target_q >= np.min(q_raw)) & (self.target_q <= np.max(q_raw))
 
-        # 5. Tensor Convert
         R_tensor = torch.from_numpy(R_interp.astype(np.float32))
         mask_tensor = torch.from_numpy(q_valid_mask.astype(np.float32))
 
-        # Shape: (2, N)
         return torch.stack([R_tensor, mask_tensor], dim=0)
 
     def denormalize_params(self, params_norm):
@@ -69,7 +59,6 @@ class XRRPreprocessor:
         """
         if self.param_mean is None:
             raise ValueError("Statistics file is not loaded.")
-
         if isinstance(params_norm, torch.Tensor):
             params_norm = params_norm.detach().cpu().numpy()
 
@@ -99,9 +88,8 @@ class XRR1LayerDataset(Dataset):
     """
 
     def __init__(
-        self, h5_file: str | Path, stats_file: str | Path,
+        self, qs: np.ndarray, h5_file: str | Path, stats_file: str | Path,
         mode: str = "train", val_ratio: float = 0.2, test_ratio: float = 0.1,
-        q_min: float = 0.0, q_max: float = 0.5, n_points: int = 200,
         augment: bool = False, aug_prob: float = 0.5, min_scan_range: float = 0.15
     ):
 
@@ -109,27 +97,21 @@ class XRR1LayerDataset(Dataset):
         self.stats_path = Path(stats_file)
         self.mode = mode
 
-        # ---------------------------------------------------------
-        # 1. Master Grid Setting (Fixed world view for the model)
-        # ---------------------------------------------------------
-        self.target_q = np.linspace(q_min, q_max, n_points).astype(np.float32)
-        self.n_points = n_points
-
-        # ---------------------------------------------------------
-        # 2. Augmentation Setting (Activate only in Train mode)
-        # ---------------------------------------------------------
+        # Grid & Augmentation
+        self.target_q = qs
         self.augment = augment and (mode == 'train')
         self.aug_prob = aug_prob
         self.min_scan_range = min_scan_range
 
-        # 3. Load Data
+        self.hf: h5py.File | None = None
+        # Load Data
         self._load_h5_data()
 
-        # 4. Data Split
+        # Data Split
         self._setup_split(val_ratio, test_ratio)
 
-        # 5. Setup Normalization Statistics
-        self.processor = XRRPreprocessor(q_min, q_max, n_points)
+        # Setup Normalization Statistics
+        self.processor = XRRPreprocessor(self.target_q)
         self._setup_param_stats()
         self.processor.load_stats(self.stats_path)
 
@@ -146,9 +128,8 @@ class XRR1LayerDataset(Dataset):
             self.thickness = hf["thickness"][:].squeeze()
             self.roughness = hf["roughness"][:].squeeze()
             self.sld = hf["sld"][:].squeeze()
-            self.reflectivity = hf["R"][:]
 
-        self.n_total = len(self.reflectivity)
+            self.n_total = hf["R"].shape[0]
 
     def _setup_split(self, val_ratio, test_ratio):
         """Split indices for Train/Val/Test"""
@@ -177,11 +158,10 @@ class XRR1LayerDataset(Dataset):
         elif self.mode == "train":
             print(f"[{self.mode}] Calculating statistics from training data...")
             train_indices = range(0, self.train_end)
-
             params = np.stack([
                 self.thickness[train_indices],
                 self.roughness[train_indices],
-                self.sld[train_indices]
+                self.sld[train_indices],
             ], axis=1)
 
             self.param_mean = np.mean(params, axis=0)
@@ -197,9 +177,6 @@ class XRR1LayerDataset(Dataset):
     def __len__(self):
         return len(self.indices)
 
-    # =========================================================================
-    #  Data Processing Pipeline
-    # =========================================================================
     def __getitem__(self, idx):
         real_idx = self.indices[idx]
         R_raw, q_raw, params_raw = self._get_raw_data(real_idx)
@@ -214,21 +191,21 @@ class XRR1LayerDataset(Dataset):
 
         return input_tensor, params_tensor
 
-    # =========================================================================
-    #  Functional Components
-    # =========================================================================
     def _get_raw_data(self, idx):
-        R_raw = self.reflectivity[idx]
+        if self.hf is None:
+            self.hf = h5py.File(self.h5_path, 'r', swmr=True)
 
-        if self.source_q.ndim == 2:
-            q_raw = self.source_q[idx]
-        else:
+        R_raw = self.hf["R"][idx]
+
+        if self.source_q.ndim == 1:
             q_raw = self.source_q
+        else:
+            q_raw = self.source_q[idx]
 
         params_raw = np.array([
             self.thickness[idx],
             self.roughness[idx],
-            self.sld[idx]
+            self.sld[idx],
         ], dtype=np.float32)
 
         return R_raw, q_raw, params_raw
@@ -273,3 +250,6 @@ class XRR1LayerDataset(Dataset):
             return R_raw, q_raw
 
         return R_raw[mask], q_raw[mask]
+    def __del__(self):
+        if self.hf is not None:
+            self.hf.close()

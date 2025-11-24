@@ -12,6 +12,7 @@ from xrr_model import XRR1DRegressor
 
 from reflecto.math_utils import powerspace
 
+
 def set_seed(seed: int = 42):
     """Fix random seed for reproducibility."""
     torch.manual_seed(seed)

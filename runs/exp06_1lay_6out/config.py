@@ -7,8 +7,8 @@ from reflecto.physics_utils import tth2q
 
 CONFIG = {
     "exp_name": "power1_8",
-    "base_dir": Path(r"D:\Members\IsaacYong\Data\XRR_AI\one_layer"),
-    # "base_dir": Path(r"D:\data\XRR_AI\mask"),
+    # "base_dir": Path(r"D:\Members\IsaacYong\Data\XRR_AI\one_layer"),
+    "base_dir": Path(r"D:\data\XRR_AI\mask"),
     "param_ranges": {
         "thickness": None,
         "roughness": None,

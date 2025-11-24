@@ -48,33 +48,44 @@ class Trainer:
         self.patience_counter = 0
         self.early_stop_patience = patience
 
+        self.history = {"train": [], "val": [], "lr": []}
+
+        self.scaler = torch.amp.GradScaler('cuda')
+
         print(f"🚀 Trainer initialized on {self.device}")
 
     def _train_epoch(self, epoch: int, total_epochs: int) -> float:
         """Runs a single training epoch."""
+        if self.device.type == 'cuda':
+            torch.cuda.empty_cache()
+
         self.model.train()
         running_loss = 0.0
 
-        # Progress bar for visual feedback
+        # Progress bar
         pbar = tqdm(self.train_loader, desc=f"Epoch {epoch}/{total_epochs} [Train]", leave=False)
 
         for inputs, targets in pbar:
-            # inputs: [Batch, 2, Length] (LogR + Mask)
-            # targets: [Batch, 3] (Normalized Params)
             inputs = inputs.to(self.device)
             targets = targets.to(self.device)
 
+            self.optimizer.zero_grad(set_to_none=True)
+
             # Forward pass
-            preds = self.model(inputs)
-            loss = self.criterion(preds, targets)
+            with torch.amp.autocast('cuda'):
+                preds = self.model(inputs)
+                loss = self.criterion(preds, targets)
 
             # Backward pass and Optimization
-            self.optimizer.zero_grad()
-            loss.backward()
-
+            self.scaler.scale(loss).backward()
+            # Unscale gradients BEFORE clipping
+            self.scaler.unscale_(self.optimizer)
             # Gradient Clipping to prevent exploding gradients
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
-            self.optimizer.step()
+
+            # Step with Scaler
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
 
             running_loss += loss.item()
             pbar.set_postfix({'loss': f'{loss.item():.5f}'})
@@ -114,39 +125,43 @@ class Trainer:
         print("-" * 60)
 
         for epoch in range(start_epoch, epochs + 1):
-            # 1. Training and Validation Steps
+            # Training and Validation Steps
             train_loss = self._train_epoch(epoch, epochs)
             val_loss = self._validate()
 
-            # 2. Scheduler Step
+            #  Update History
+            self.history['train'].append(train_loss)
+            self.history['val'].append(val_loss)
+            self.history['lr'].append(self.optimizer.param_groups[0]['lr'])
+
+            # Scheduler Step
             self.scheduler.step(val_loss)
 
             # Log current Learning Rate
             current_lr = self.optimizer.param_groups[0]['lr']
 
-            # 3. Logging
             print(f"Epoch {epoch:03d} | Train Loss: {train_loss:.6f} | Val Loss: {val_loss:.6f} | LR: {current_lr:.2e}")
 
-            # 4. Save Best Model
+            # Save Best Model
             if val_loss < self.best_val_loss:
                 self.best_val_loss = val_loss
                 self.patience_counter = 0
-                self._save_checkpoint("best.pt", epoch, val_loss, is_best=True)
+                self._save_checkpoint("best.pt", epoch, val_loss)
                 print(f"  >>> New Best Model Saved! (Val Loss: {val_loss:.6f})")
             else:
                 self.patience_counter += 1
                 print(f"  ... Patience: {self.patience_counter}/{self.early_stop_patience}")
 
-            # 5. Early Stopping Check
+            # Early Stopping Check
             if self.patience_counter >= self.early_stop_patience:
                 print(f"\n⏹ Early stopping triggered at epoch {epoch}")
                 break
 
-            # (Optional) Save Last Model every epoch
+            # Save Last Model every epoch
             if epoch == epochs:
                 self._save_checkpoint("last.pt", epoch, val_loss)
 
-    def _save_checkpoint(self, filename: str, epoch: int, val_loss: float, is_best: bool = False):
+    def _save_checkpoint(self, filename: str, epoch: int, val_loss: float):
         """Saves model checkpoint with metadata."""
         path = self.checkpoint_dir / filename
 
@@ -160,6 +175,7 @@ class Trainer:
             'scheduler_state_dict': self.scheduler.state_dict(),
             'val_loss': val_loss,
             'best_val_loss': self.best_val_loss,
+            'history': self.history,
             'config': {
                 'model_args': model_config
             }
@@ -180,6 +196,10 @@ class Trainer:
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         if 'scheduler_state_dict' in checkpoint:
             self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        if 'scaler_state_dict' in checkpoint:
+            self.scaler.load_state_dict(checkpoint['scaler_state_dict'])
+
+        self.history = checkpoint.get('history', {'train': [], 'val': [], 'lr': []})
 
         self.best_val_loss = checkpoint.get('best_val_loss', float('inf'))
         start_epoch = checkpoint.get('epoch', 0) + 1
