@@ -115,7 +115,7 @@ def main():
     ensure_data_exists(qs, CONFIG, h5_file)
 
     # 3. Create Loaders
-    train_loader, val_loader, test_loader = get_dataloaders(CONFIG, h5_file, stats_file)
+    train_loader, val_loader, test_loader = get_dataloaders(qs, CONFIG, h5_file, stats_file)
 
     # 4. Model Initialization
     print("Initializing model...")
