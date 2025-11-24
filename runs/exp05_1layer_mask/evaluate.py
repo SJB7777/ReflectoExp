@@ -9,7 +9,7 @@ from dataset import XRR1LayerDataset
 from torch.utils.data import DataLoader
 from xrr_model import XRR1DRegressor
 
-from reflecto.math_utils import fom_log
+from reflecto.math_utils import powerspace
 
 
 def calculate_metrics(preds: np.ndarray, targets: np.ndarray) -> dict[str, np.ndarray]:
@@ -34,7 +34,6 @@ def calculate_metrics(preds: np.ndarray, targets: np.ndarray) -> dict[str, np.nd
         "mae": mae,
         "rmse": rmse,
         "mape": mape,
-        "fom": fom_log(targets, preds)
     }
 
 
@@ -133,6 +132,43 @@ def save_results_plot(
     plt.close()
 
 
+def save_history_plot(history: dict, save_path: Path) -> None:
+    """
+    Visualize training history (Loss curves and Learning Rate) and save as an image.
+    """
+    if not save_path or not history:
+        return
+
+    epochs = range(1, len(history['train']) + 1)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+
+    # 1. Loss Curve
+    ax1.plot(epochs, history['train'], label='Train Loss', color='blue', linewidth=2)
+    ax1.plot(epochs, history['val'], label='Val Loss', color='orange', linewidth=2)
+    ax1.set_xlabel('Epochs')
+    ax1.set_ylabel('Loss (MSE)')
+    ax1.set_title('Training & Validation Loss')
+    ax1.legend()
+    ax1.grid(True, alpha=0.3)
+
+    # 2. Learning Rate Curve
+    if 'lr' in history and len(history['lr']) > 0:
+        ax2.plot(epochs, history['lr'], label='Learning Rate', color='green', linestyle='--')
+        ax2.set_xlabel('Epochs')
+        ax2.set_ylabel('Learning Rate')
+        ax2.set_title('Learning Rate Schedule')
+        ax2.set_yscale('log')
+        ax2.legend()
+        ax2.grid(True, alpha=0.3, which="both")
+
+    plt.tight_layout()
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(save_path, dpi=150)
+    print(f"Saved History Plot: {save_path}")
+    plt.close()
+
+
 def run_inference(model: torch.nn.Module, loader: DataLoader, device: torch.device) -> tuple[torch.Tensor, torch.Tensor]:
     """
     Execute model inference on the given loader.
@@ -176,7 +212,8 @@ def evaluate_pipeline(
     checkpoint_path: Path,
     stats_path: Path,
     report_img_path: Path | None = None,
-    report_csv_path: Path | None = None
+    report_csv_path: Path | None = None,
+    report_history_path: Path | None = None
 ) -> None:
     """
     Orchestrates the full evaluation process:
@@ -198,10 +235,8 @@ def evaluate_pipeline(
     # Load Model
     ckpt = torch.load(checkpoint_path, map_location=device)
     model_args = ckpt.get('config', {}).get('model_args', {})
-    if 'input_channels' not in model_args:
-        model_args['input_channels'] = 2
-    if "output_dim" not in model_args:
-        model_args['output_dim'] = 3
+
+    history = ckpt.get('history', {})
 
     model = XRR1DRegressor(**model_args).to(device)
     model.load_state_dict(ckpt['model_state_dict'])
@@ -223,7 +258,9 @@ def evaluate_pipeline(
     metrics = calculate_metrics(preds_np, targets_np)
 
     # Define parameter names (ensure this matches model output dimension)
-    param_names = ["Thickness (Å)", "Roughness (Å)", "SLD (10⁻⁶ Å⁻²)"]
+    param_names = [
+        "Thickness (Å)", "Roughness (Å)", "SLD (10⁻⁶ Å⁻²)",
+    ]
 
     # Create Master DataFrame
     results_df = generate_results_df(preds_np, targets_np, metrics['errors'], param_names)
@@ -237,6 +274,9 @@ def evaluate_pipeline(
     if report_img_path:
         save_results_plot(results_df, param_names, report_img_path)
 
+    if report_history_path and history:
+        save_history_plot(history, report_history_path)
+
 
 def main():
     # Configuration & Paths
@@ -247,17 +287,19 @@ def main():
 
     report_file_img = exp_dir / "evaluation_report.png"
     report_file_csv = exp_dir / "evaluation_results.csv"
+    report_history_img = exp_dir / "training_history.png"
 
     if not h5_file.exists():
         print("Dataset file not found. Cannot proceed.")
         return
-
+    qs: np.ndarray = powerspace(
+        CONFIG["simulation"]["q_min"],
+        CONFIG["simulation"]["q_max"],
+        CONFIG["simulation"]["q_points"],
+        CONFIG["simulation"]["power"])
     # Dataset Preparation
     test_set = XRR1LayerDataset(
-        h5_file, stats_file, mode="test",
-        q_min=CONFIG["simulation"]["q_min"],
-        q_max=CONFIG["simulation"]["q_max"],
-        n_points=CONFIG["simulation"]["q_points"]
+        qs, h5_file, stats_file, mode="test",
     )
 
     test_loader = DataLoader(
@@ -273,7 +315,8 @@ def main():
         checkpoint_path=checkpoint_file,
         stats_path=stats_file,
         report_img_path=report_file_img,
-        report_csv_path=report_file_csv
+        report_csv_path=report_file_csv,
+        report_history_path=report_history_img
     )
 
 

@@ -123,7 +123,7 @@ def main():
     model = XRR1DRegressor(
         q_len=CONFIG["simulation"]["q_points"],
         input_channels=2,
-        output_dim=6,
+        output_dim=3,
         n_channels=CONFIG["model"]["n_channels"],
         depth=CONFIG["model"]["depth"],
         mlp_hidden=CONFIG["model"]["mlp_hidden"],

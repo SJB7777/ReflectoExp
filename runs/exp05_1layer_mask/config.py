@@ -6,7 +6,7 @@ import numpy as np
 from reflecto.physics_utils import tth2q
 
 CONFIG = {
-    "exp_name": "power1_8",
+    "exp_name": "power0_95_tune",
     # "base_dir": Path(r"D:\Members\IsaacYong\Data\XRR_AI\one_layer"),
     "base_dir": Path(r"D:\data\XRR_AI\mask"),
     "param_ranges": {
@@ -19,23 +19,23 @@ CONFIG = {
     },
     "simulation": {
         "wavelength": 1.54,
-        "n_samples": int(1e6),
+        "n_samples": int(1e3),
         "q_points": 1000,
         "q_min": tth2q(0.1),
         "q_max": tth2q(15),
-        "power": 1.8
+        "power": 0.95
     },
     "model": {
-        "n_channels": 64,
-        "depth": 4,
+        "n_channels": 32,
+        "depth": 5,
         "mlp_hidden": 256,
-        "dropout": 0.1,
+        "dropout": 0.02507346016270837,
     },
     "training": {
-        "batch_size": 64,
+        "batch_size": 32,
         "epochs": 50,
-        "lr": 0.002,
-        "weight_decay": 1e-4,
+        "lr": 0.0006119557822568638,
+        "weight_decay": 0.0005310131070268705,
         "val_ratio": 0.2,
         "test_ratio": 0.1,
         "patience" : 15,
