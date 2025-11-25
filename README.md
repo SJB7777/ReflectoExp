@@ -26,7 +26,6 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 
 # Clone Repository
 git clone https://github.com/SJB7777/reflecto
-cd reflecto
 
 # Make virtual environment
 uv venv --python 3.13
@@ -57,8 +56,7 @@ runs/
 ├── exp01_quan_class/      # Classification approach for multi-layer
 ├── exp02_one_layer/       # Regression for single layer (RefNX)
 ├── exp03_physics_fused/   # Physics-guided learning (experimental)
-├── exp04_one_genx/        # Regression for single layer (GenX)
-└── exp05_1layer_mask      
+└── exp04_one_genx/        # Regression for single layer (GenX)
 ```
 
 **Each experiment contains:**
