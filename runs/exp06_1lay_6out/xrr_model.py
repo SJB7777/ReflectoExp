@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class XRR1DRegressor(nn.Module):
-    def __init__(self, q_len: int, input_channels: int = 2, output_dim: int = 3, n_channels: int = 64, depth: int = 4,
+    def __init__(self, q_len: int, input_channels: int = 2, output_dim: int = 6, n_channels: int = 64, depth: int = 4,
         mlp_hidden: int = 256, dropout: float = 0.1):
         """
         XRR 1D CNN Regressor

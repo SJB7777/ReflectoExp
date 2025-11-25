@@ -34,6 +34,12 @@ def generate_1layer_data(qs: np.ndarray, config: dict, h5_file: Path | str):
         simulator_args["roughness_range"] = param_ranges["roughness"]
     if param_ranges["sld"] is not None:
         simulator_args["sld_range"] = param_ranges["sld"]
+    if param_ranges["sio2_thickness"] is not None:
+        simulator_args["sio2_thickness_range"] = param_ranges["sio2_thickness"]
+    if param_ranges["sio2_roughness"] is not None:
+        simulator_args["sio2_roughness_range"] = param_ranges["sio2_roughness"]
+    if param_ranges["sio2_sld"] is not None:
+        simulator_args["sio2_sld_range"] = param_ranges["sio2_sld"]
     simulator = XRRSimulator(
         **simulator_args
     )

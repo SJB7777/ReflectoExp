@@ -128,6 +128,9 @@ class XRR1LayerDataset(Dataset):
             self.thickness = hf["thickness"][:].squeeze()
             self.roughness = hf["roughness"][:].squeeze()
             self.sld = hf["sld"][:].squeeze()
+            self.sio2_thickness = hf["sio2_thickness"][:].squeeze()
+            self.sio2_roughness = hf["sio2_roughness"][:].squeeze()
+            self.sio2_sld = hf["sio2_sld"][:].squeeze()
 
             self.n_total = hf["R"].shape[0]
 
@@ -162,6 +165,9 @@ class XRR1LayerDataset(Dataset):
                 self.thickness[train_indices],
                 self.roughness[train_indices],
                 self.sld[train_indices],
+                self.sio2_thickness[train_indices],
+                self.sio2_roughness[train_indices],
+                self.sio2_sld[train_indices],
             ], axis=1)
 
             self.param_mean = np.mean(params, axis=0)
@@ -206,6 +212,9 @@ class XRR1LayerDataset(Dataset):
             self.thickness[idx],
             self.roughness[idx],
             self.sld[idx],
+            self.sio2_thickness[idx],
+            self.sio2_roughness[idx],
+            self.sio2_sld[idx],
         ], dtype=np.float32)
 
         return R_raw, q_raw, params_raw

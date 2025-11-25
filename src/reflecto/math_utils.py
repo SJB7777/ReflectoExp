@@ -2,6 +2,17 @@ import warnings
 
 import numpy as np
 
+def powerspace(
+    start: float,
+    stop: float,
+    num: int,
+    power: float = 1.5,
+    endpoint: bool = True,
+    dtype: np.dtype | None = None,
+    axis: int = 0,
+):
+    x = np.linspace(0, 1, num, endpoint=endpoint, dtype=dtype, axis=axis)
+    return start + (stop - start) * x**power
 
 def fom_log(ref_exp, ref_calc):
     """
@@ -27,3 +38,14 @@ def i0_normalize(arr):
         )
         return arr
     return arr / arr.max()
+
+
+def main() -> None:
+    import matplotlib.pyplot as plt
+    power_grid = powerspace(0.1, 0.8, 100, power=1.8)
+    plt.plot(power_grid)
+    plt.show()
+
+
+if __name__ == "__main__":
+    main()

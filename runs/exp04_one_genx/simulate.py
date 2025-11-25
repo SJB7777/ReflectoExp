@@ -2,7 +2,8 @@ from pathlib import Path
 
 import numpy as np
 
-from reflecto.simulate.simul_genx import XRRSimulator, tth2q_wavelen
+from reflecto.physics_utils import tth2q
+from reflecto.simulate.simul_genx import XRRSimulator
 
 
 def generate_1layer_data(config: dict, h5_file: Path | str):
@@ -23,8 +24,8 @@ def generate_1layer_data(config: dict, h5_file: Path | str):
     output_dir.mkdir(exist_ok=True, parents=True)
 
     # q 벡터 생성
-    q_min = tth2q_wavelen(simulation["tth_min"], simulation["wavelength"])
-    q_max = tth2q_wavelen(simulation["tth_max"], simulation["wavelength"])
+    q_min = tth2q(simulation["tth_min"], simulation["wavelength"])
+    q_max = tth2q(simulation["tth_max"], simulation["wavelength"])
     qs = np.linspace(q_min, q_max, simulation["q_points"])
 
     simulator_args: dict = {

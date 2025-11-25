@@ -6,7 +6,7 @@ import numpy as np
 from reflecto.physics_utils import tth2q
 
 CONFIG = {
-    "exp_name": "power0_95_tune",
+    "exp_name": "power0_95_tune_6out",
     "base_dir": Path(r"D:\Members\IsaacYong\Data\XRR_AI\one_layer"),
     # "base_dir": Path(r"D:\data\XRR_AI\mask"),
     "param_ranges": {

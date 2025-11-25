@@ -260,6 +260,7 @@ def evaluate_pipeline(
     # Define parameter names (ensure this matches model output dimension)
     param_names = [
         "Thickness (Å)", "Roughness (Å)", "SLD (10⁻⁶ Å⁻²)",
+        "SiO2 Thickness (Å)", "SiO2 Roughness (Å)", "SiO2 SLD (10⁻⁶ Å⁻²)"
     ]
 
     # Create Master DataFrame
