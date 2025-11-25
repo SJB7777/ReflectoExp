@@ -11,9 +11,6 @@ class XRRInferenceEngine:
         """
         Initializes the inference engine: loads configuration, model, and statistics.
         """
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(f"[Inference] Device: {self.device}")
-
         # 1. Set Path
         if exp_dir is None:
             exp_dir = Path(CONFIG["base_dir"]) / CONFIG["exp_name"]
@@ -22,6 +19,9 @@ class XRRInferenceEngine:
 
         self.stats_file = exp_dir / "stats.pt"
         self.checkpoint_file = exp_dir / "best.pt"
+
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print(f"[Inference] Device: {self.device}")
 
         # 2. Check files
         if not self.stats_file.exists():
