@@ -4,6 +4,7 @@ import h5py
 import numpy as np
 import torch
 from torch.utils.data import Dataset
+from augmentations import XRRAugmentations
 
 
 class XRRPreprocessor:
@@ -90,7 +91,8 @@ class XRR1LayerDataset(Dataset):
     def __init__(
         self, qs: np.ndarray, h5_file: str | Path, stats_file: str | Path,
         mode: str = "train", val_ratio: float = 0.2, test_ratio: float = 0.1,
-        augment: bool = False, aug_prob: float = 0.5, min_scan_range: float = 0.15
+        augment: bool = False, expand_factor: int = 1, aug_prob: float = 0.5,
+        min_scan_range: float = 0.15, q_shift_sigma: float = 0.002, intensity_scale: float = 0.1
     ):
 
         self.h5_path = Path(h5_file)
@@ -100,36 +102,62 @@ class XRR1LayerDataset(Dataset):
         # Grid & Augmentation
         self.target_q = qs
         self.augment = augment and (mode == 'train')
-        self.aug_prob = aug_prob
+        self.expand_factor = expand_factor if (mode == 'train') else 1
         self.min_scan_range = min_scan_range
+        self.aug_prob = aug_prob
+        if self.augment:
+            self.physics_augmenter = XRRAugmentations(
+                intensity_noise_scale=intensity_scale,
+                q_shift_sigma=q_shift_sigma,
+                prob=aug_prob
+            )
 
         self.hf: h5py.File | None = None
         # Load Data
-        self._load_h5_data()
+        self._load_metadata_only()
 
         # Data Split
         self._setup_split(val_ratio, test_ratio)
 
         # Setup Normalization Statistics
         self.processor = XRRPreprocessor(self.target_q)
-        self._setup_param_stats()
+
+        if mode == 'train' and not self.stats_path.exists():
+            self._calculate_and_save_stats()
+
+        # self._setup_param_stats()
         self.processor.load_stats(self.stats_path)
 
-    def _load_h5_data(self):
-        """Load entire data from H5 file into memory"""
+    def _load_metadata_only(self):
         if not self.h5_path.exists():
             raise FileNotFoundError(f"H5 file not found: {self.h5_path}")
 
         with h5py.File(self.h5_path, "r") as hf:
-            # q data: (N, L) or (L,)
             self.source_q = hf["q"][:]
+            self.n_total = hf["R"].shape[0]
 
-            # Parameters and Reflectivity
+            # Load small parameter arrays into memory for speed
             self.thickness = hf["thickness"][:].squeeze()
             self.roughness = hf["roughness"][:].squeeze()
             self.sld = hf["sld"][:].squeeze()
 
-            self.n_total = hf["R"].shape[0]
+    def _calculate_and_save_stats(self):
+        """Calculate normalization stats on training subset."""
+        print(f"[{self.mode}] Calculating statistics...")
+        idx = range(self.train_end) # Use only training part
+
+        params_list = [
+            self.thickness[idx], self.roughness[idx], self.sld[idx]
+        ]
+
+        params = np.stack(params_list, axis=1)
+        mean = np.mean(params, axis=0)
+        std = np.std(params, axis=0) + 1e-8
+
+        torch.save({
+            "param_mean": torch.from_numpy(mean),
+            "param_std": torch.from_numpy(std)
+        }, self.stats_path)
 
     def _setup_split(self, val_ratio, test_ratio):
         """Split indices for Train/Val/Test"""
@@ -147,70 +175,40 @@ class XRR1LayerDataset(Dataset):
             case _:
                 raise ValueError(f"Unknown mode: {self.mode}")
 
-    def _setup_param_stats(self):
-        """Process parameter normalization statistics (Calculate only in Train mode)"""
-        if self.stats_path.exists():
-            print(f"[{self.mode}] Loading statistics from {self.stats_path}")
-            stats = torch.load(self.stats_path)
-            self.param_mean = stats["param_mean"].numpy()
-            self.param_std = stats["param_std"].numpy()
-
-        elif self.mode == "train":
-            print(f"[{self.mode}] Calculating statistics from training data...")
-            train_indices = range(0, self.train_end)
-            params = np.stack([
-                self.thickness[train_indices],
-                self.roughness[train_indices],
-                self.sld[train_indices],
-            ], axis=1)
-
-            self.param_mean = np.mean(params, axis=0)
-            self.param_std = np.std(params, axis=0) + 1e-8 # Prevent division by zero
-
-            torch.save({
-                "param_mean": torch.from_numpy(self.param_mean),
-                "param_std": torch.from_numpy(self.param_std)
-            }, self.stats_path)
-        else:
-            raise FileNotFoundError(f"Stats file not found at {self.stats_path}. Run 'train' first.")
-
     def __len__(self):
-        return len(self.indices)
+
+        return len(self.indices) * self.expand_factor
 
     def __getitem__(self, idx):
-        real_idx = self.indices[idx]
-        R_raw, q_raw, params_raw = self._get_raw_data(real_idx)
+        # Map expanded index back to original range
+        # e.g. If len=100, idx=105 -> real_idx=indices[5]
+        original_idx = idx % len(self.indices)
+        real_idx = self.indices[original_idx]
 
-        # Augmentation (Dataset's unique role)
+        R_raw, q_raw, params_raw = self._get_raw_data_lazy(real_idx)
+
         if self.augment:
-            R_raw, q_raw = self._apply_augmentation(R_raw, q_raw)
+            R_raw, q_raw = self._apply_crop_augmentation(R_raw, q_raw)
+            q_raw, R_raw = self.physics_augmenter(q_raw, R_raw)
 
-        # [NEW] Delegate complex processing to processor!
+        # Preprocessing (Log -> Interp -> Mask -> Normalize)
         input_tensor = self.processor.process_input(q_raw, R_raw)
         params_tensor = self.processor.normalize_parameters(params_raw)
 
         return input_tensor, params_tensor
 
-    def _get_raw_data(self, idx):
+    def _get_raw_data_lazy(self, idx):
         if self.hf is None:
             self.hf = h5py.File(self.h5_path, 'r', swmr=True)
 
         R_raw = self.hf["R"][idx]
+        q_raw = self.source_q[idx] if self.source_q.ndim == 2 else self.source_q
 
-        if self.source_q.ndim == 1:
-            q_raw = self.source_q
-        else:
-            q_raw = self.source_q[idx]
+        p_list = [self.thickness[idx], self.roughness[idx], self.sld[idx]]
 
-        params_raw = np.array([
-            self.thickness[idx],
-            self.roughness[idx],
-            self.sld[idx],
-        ], dtype=np.float32)
+        return R_raw, q_raw, np.array(p_list, dtype=np.float32)
 
-        return R_raw, q_raw, params_raw
-
-    def _apply_augmentation(self, R_raw, q_raw):
+    def _apply_crop_augmentation(self, R_raw, q_raw):
         """
         [Realistic Augmentation]
         - Front (Beamstop): Randomly crop up to max 0.04 (Protect critical angle)
@@ -250,6 +248,7 @@ class XRR1LayerDataset(Dataset):
             return R_raw, q_raw
 
         return R_raw[mask], q_raw[mask]
+
     def __del__(self):
-        if self.hf is not None:
+        if self.hf:
             self.hf.close()

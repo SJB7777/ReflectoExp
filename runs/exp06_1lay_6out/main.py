@@ -91,7 +91,8 @@ def get_dataloaders(qs: np.ndarray, config: dict, h5_file: Path, stats_file: Pat
 
 def main():
     print("=== 1-Layer XRR Regression Pipeline Started ===")
-
+    if not Path(CONFIG["base_dir"]).exists():
+        raise FileNotFoundError(f"Base directory {CONFIG["base_dir"]} does not exist.")
     # 1. Setup and Path Preparation
     set_seed(42)
 

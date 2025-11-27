@@ -49,7 +49,6 @@ class Trainer:
         self.early_stop_patience = patience
 
         self.history = {"train": [], "val": [], "lr": []}
-
         self.scaler = torch.amp.GradScaler('cuda')
 
         print(f"🚀 Trainer initialized on {self.device}")
@@ -115,11 +114,7 @@ class Trainer:
         """
         Main training loop.
         """
-        start_epoch = 1
-
-        # Load checkpoint if resuming
-        if resume_from:
-            start_epoch = self._load_checkpoint(resume_from)
+        start_epoch = self._load_checkpoint(resume_from) if resume_from else 1
 
         print(f"\nDataset Info: Train={len(self.train_loader.dataset)}, Val={len(self.val_loader.dataset)}")
         print("-" * 60)
@@ -185,7 +180,7 @@ class Trainer:
         """Loads a checkpoint to resume training."""
         filepath = Path(filepath)
         if not filepath.exists():
-            print(f"⚠️ Checkpoint not found: {filepath}. Starting from scratch.")
+            print(f"⚠️ Checkpoint not found: '{filepath}'.")
             return 1
 
         checkpoint = torch.load(filepath, map_location=self.device)

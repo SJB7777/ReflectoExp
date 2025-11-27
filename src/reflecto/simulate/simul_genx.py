@@ -37,6 +37,15 @@ class ParamSet:
             sld=float(sld_val)
         )
 
+    def to_layer(self) -> Layer:
+        """Return genx Layer object"""
+        return Layer(
+        d=self.thickness,
+        f=get_f(self.sld),
+        dens=1.0,
+        sigma=self.roughness
+        )
+
     def __format__(self, format_spec: str) -> str:
         formatted = [
             f"{name}={getattr(self, name):{format_spec}}"
@@ -54,36 +63,17 @@ def get_f(sld_1e6: float) -> complex:
     return complex((sld_1e6 * 1e-6) / r_e, 0)
 
 
-def build_sample(film_params: list[ParamSet], sio2_param: ParamSet) -> Sample:
+def build_sample(film_params: list[ParamSet], sio2_param: ParamSet, sub_param: ParamSet | None = None) -> Sample:
     """
     Create GenX Sample with explicit Si Substrate.
     Structure: Si Substrate -> Film -> Surface SiO2 -> Ambient
     """
-
-    # Substrate roughness is typically small (e.g., 3.0 A).
-    si_substrate = Layer(
-        d=0.0,              # Substrate thickness is infinite/irrelevant in XRR
-        f=get_f(2.07),      # Si SLD = 2.07
-        dens=1.0,
-        sigma=3.0           # Interface roughness between Si and Film
-    )
-
-    sio2_layer = Layer(
-        d=sio2_param.thickness,
-        f=get_f(sio2_param.sld),
-        dens=1.0,
-        sigma=sio2_param.roughness
-    )
-
-    layers = [sio2_layer]
+    if sub_param is None:
+        sub_param = ParamSet(0, 3, 20.1)
+    layers = [sio2_param.to_layer()]
     for param in film_params:
         layers.append(
-            Layer(
-            d=param.thickness,
-            f=get_f(param.sld),
-            dens=1.0,
-            sigma=param.roughness
-            )
+            param.to_layer()
         )
 
     stack = Stack(Layers=layers, Repetitions=1)
@@ -91,7 +81,7 @@ def build_sample(film_params: list[ParamSet], sio2_param: ParamSet) -> Sample:
     sample = Sample(
         Stacks=[stack],
         Ambient=AIR,
-        Substrate=si_substrate
+        Substrate=sub_param.to_layer()
     )
     return sample
 
@@ -129,7 +119,7 @@ class XRRSimulator:
             sio2_thick_range: tuple[float, float] = (10.0, 25.0),
             sio2_rough_range: tuple[float, float] = (2.0, 5.0),
             sio2_sld_mean: float = 18.8,
-            has_noise: bool = True,
+            has_noise: bool = False,
             ):
 
         self.qs = qs

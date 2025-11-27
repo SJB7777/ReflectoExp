@@ -7,7 +7,7 @@ from reflecto.physics_utils import tth2q
 
 CONFIG = {
     "exp_name": "power0_95_tune",
-    "base_dir": Path(r"D:\Members\IsaacYong\Data\XRR_AI\one_layer"),
+    "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\data\one_layer"),
     # "base_dir": Path(r"D:\data\XRR_AI\mask"),
     "param_ranges": {
         "thickness": None,
@@ -33,13 +33,18 @@ CONFIG = {
     },
     "training": {
         "batch_size": 32,
-        "epochs": 50,
+        "epochs": 100,
         "lr": 0.0006119557822568638,
         "weight_decay": 0.0005310131070268705,
         "val_ratio": 0.2,
         "test_ratio": 0.1,
         "patience" : 15,
-        "num_workers": 0
+        "num_workers": 0,
+        "augment": True,
+        "aug_prob": 0.5,
+        "q_shift_sigma": 0.002,   # +/- 0.002 A^-1 shift
+        "intensity_scale": 0.15,  # +/- 15% intensity variation
+        "expand_factor": 10,
     },
 }
 

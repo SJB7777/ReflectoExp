@@ -281,6 +281,8 @@ def evaluate_pipeline(
 
 def main():
     # Configuration & Paths
+    if not Path(CONFIG["base_dir"]).exists():
+        raise FileNotFoundError(f"Base directory {CONFIG["base_dir"]} does not exist.")
     exp_dir = Path(CONFIG["base_dir"]) / CONFIG["exp_name"]
     h5_file = exp_dir / "dataset.h5"
     stats_file = exp_dir / "stats.pt"

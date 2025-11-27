@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from torch.utils.data import Dataset
 
+from reflecto.simulate.noise import add_noise
 
 class XRRPreprocessor:
     """
@@ -187,11 +188,10 @@ class XRR1LayerDataset(Dataset):
         real_idx = self.indices[idx]
         R_raw, q_raw, params_raw = self._get_raw_data(real_idx)
 
-        # Augmentation (Dataset's unique role)
         if self.augment:
             R_raw, q_raw = self._apply_augmentation(R_raw, q_raw)
 
-        # [NEW] Delegate complex processing to processor!
+        #  Delegate complex processing to processor!
         input_tensor = self.processor.process_input(q_raw, R_raw)
         params_tensor = self.processor.normalize_parameters(params_raw)
 
@@ -202,7 +202,7 @@ class XRR1LayerDataset(Dataset):
             self.hf = h5py.File(self.h5_path, 'r', swmr=True)
 
         R_raw = self.hf["R"][idx]
-
+        R_raw = add_noise(R_raw)
         if self.source_q.ndim == 1:
             q_raw = self.source_q
         else:
@@ -259,6 +259,7 @@ class XRR1LayerDataset(Dataset):
             return R_raw, q_raw
 
         return R_raw[mask], q_raw[mask]
+
     def __del__(self):
         if self.hf is not None:
             self.hf.close()

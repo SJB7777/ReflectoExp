@@ -43,6 +43,7 @@ def get_dataloaders(qs: np.ndarray, config: dict, h5_file: Path, stats_file: Pat
     """Create Dataset and DataLoaders."""
 
     # Common arguments (Get q-related settings from Config)
+
     dataset_kwargs = {
         "qs": qs,
         "h5_file": h5_file,
@@ -50,8 +51,11 @@ def get_dataloaders(qs: np.ndarray, config: dict, h5_file: Path, stats_file: Pat
         "val_ratio": config["training"]["val_ratio"],
         "test_ratio": config["training"]["test_ratio"],
         "augment": True,
-        "aug_prob": 0.5,
-        "min_scan_range": 0.15
+        "expand_factor" : config["training"]["expand_factor"],
+        "aug_prob" : config["training"]["aug_prob"],
+        "min_scan_range" : 0.15,
+        "q_shift_sigma" : config["training"]["q_shift_sigma"],
+        "intensity_scale" : config["training"]["intensity_scale"]
     }
 
     # Create Dataset instances
@@ -92,15 +96,16 @@ def get_dataloaders(qs: np.ndarray, config: dict, h5_file: Path, stats_file: Pat
 def main():
     print("=== 1-Layer XRR Regression Pipeline Started ===")
 
-    # 1. Setup and Path Preparation
     set_seed(42)
-
+    if not Path(CONFIG["base_dir"]).exists():
+        raise FileNotFoundError(f"Base directory {CONFIG["base_dir"]} does not exist.")
     exp_dir = Path(CONFIG["base_dir"]) / CONFIG["exp_name"]
     exp_dir.mkdir(parents=True, exist_ok=True)
 
     h5_file = exp_dir / "dataset.h5"
     stats_file = exp_dir / "stats.pt"
     checkpoint_file = exp_dir / "best.pt"
+    last_checkpoint_file = exp_dir / "last.pt"
     report_file_img = exp_dir / "error_distribution.png"
     report_file_csv = exp_dir / "evaluation_results.csv"
     report_history_img = exp_dir / "training_history.png"
@@ -112,13 +117,11 @@ def main():
         CONFIG["simulation"]["power"])
     save_config(CONFIG, config_file_json)
     print(f"Config file saved at '{config_file_json}'")
-    # 2. Data Preparation
+
     ensure_data_exists(qs, CONFIG, h5_file)
 
-    # 3. Create Loaders
     train_loader, val_loader, test_loader = get_dataloaders(qs, CONFIG, h5_file, stats_file)
 
-    # 4. Model Initialization
     print("Initializing model...")
     model = XRR1DRegressor(
         q_len=CONFIG["simulation"]["q_points"],
@@ -133,7 +136,6 @@ def main():
     param_count = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Model parameters: {param_count:,}")
 
-    # 5. Training Setup and Execution
     trainer = Trainer(
         model=model,
         train_loader=train_loader,
@@ -145,9 +147,8 @@ def main():
     )
 
     print("Starting training...")
-    trainer.train(CONFIG["training"]["epochs"])
+    trainer.train(CONFIG["training"]["epochs"], last_checkpoint_file)
 
-    # 6. Final Evaluation
     print("\n" + "="*50)
     print("Performing Final Test Evaluation")
     print("="*50)
