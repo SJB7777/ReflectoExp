@@ -34,24 +34,38 @@ class XRRPreprocessor:
 
     def process_input(self, q_raw, R_raw):
         """
-        Raw Data (q, R) -> Model Input Tensor (2, N)
-        Operation: Normalization + Interpolation + Masking
+        Raw Data (Linear q) -> Model Input Tensor (Power q)
         """
+        # 1. 데이터 정제 (NaN 방지)
+        R_raw = np.nan_to_num(R_raw, nan=1e-15, posinf=1e-15, neginf=1e-15)
+
+        # 2. Normalize (Max=1.0) -> Log Scale
         R_max = np.max(R_raw)
-        R_norm = R_raw / (R_max + 1e-15)
+        if R_max <= 0:
+            R_max = 1.0 # 0 나누기 방지
+
+        R_norm = R_raw / R_max
         R_log = np.log10(np.maximum(R_norm, 1e-15))
 
-        # Sort (Reverse if q is in descending order)
+        # 3. 오름차순 정렬 (np.interp는 x가 정렬되어 있어야 함)
         if q_raw[0] > q_raw[-1]:
             q_raw = q_raw[::-1]
             R_log = R_log[::-1]
 
+        # [핵심] Resampling (Linear -> Power)
+        # q_raw(실측) 위의 점들을 self.target_q(모델 그리드) 위치로 옮깁니다.
+        # 값이 없는 구간(범위 밖)은 left/right=0.0으로 채웁니다.
         R_interp = np.interp(self.target_q, q_raw, R_log, left=0.0, right=0.0)
+
+        # 4. Masking (실제 측정 범위 밖은 0 처리)
+        # 모델 그리드(target_q) 중 실측 데이터(q_raw) 범위 안에 있는 것만 유효(1)
         q_valid_mask = (self.target_q >= np.min(q_raw)) & (self.target_q <= np.max(q_raw))
 
+        # 5. Tensor 변환
         R_tensor = torch.from_numpy(R_interp.astype(np.float32))
         mask_tensor = torch.from_numpy(q_valid_mask.astype(np.float32))
 
+        # (2, N) 형태로 반환 [LogR, Mask]
         return torch.stack([R_tensor, mask_tensor], dim=0)
 
     def denormalize_params(self, params_norm):
