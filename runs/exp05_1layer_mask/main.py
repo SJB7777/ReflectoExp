@@ -147,7 +147,10 @@ def main():
     )
 
     print("Starting training...")
-    trainer.train(CONFIG["training"]["epochs"], last_checkpoint_file)
+    if last_checkpoint_file.exists():
+        trainer.train(CONFIG["training"]["epochs"], last_checkpoint_file)
+    else:
+        trainer.train(CONFIG["training"]["epochs"])
 
     print("\n" + "="*50)
     print("Performing Final Test Evaluation")

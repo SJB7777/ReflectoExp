@@ -5,7 +5,6 @@ from genx.data import DataList, DataSet
 from genx.model import Model
 from genx.parameters import Parameters
 
-# (사용자 환경에 맞게 임포트 경로 수정)
 from reflecto.simulate.simul_genx import ParamSet
 
 
