@@ -1,4 +1,5 @@
 from pathlib import Path
+from pprint import pprint
 
 import numpy as np
 import simulate
@@ -117,7 +118,8 @@ def main():
         CONFIG["simulation"]["power"])
     save_config(CONFIG, config_file_json)
     print(f"Config file saved at '{config_file_json}'")
-
+    print("Config:")
+    pprint(CONFIG)
     ensure_data_exists(qs, CONFIG, h5_file)
 
     train_loader, val_loader, test_loader = get_dataloaders(qs, CONFIG, h5_file, stats_file)
@@ -148,8 +150,10 @@ def main():
 
     print("Starting training...")
     if last_checkpoint_file.exists():
+        print(f"last_checkpoint_file: '{last_checkpoint_file}' has found")
         trainer.train(CONFIG["training"]["epochs"], last_checkpoint_file)
     else:
+        print(f"last_checkpoint_file: '{last_checkpoint_file}' has not found")
         trainer.train(CONFIG["training"]["epochs"])
 
     print("\n" + "="*50)
