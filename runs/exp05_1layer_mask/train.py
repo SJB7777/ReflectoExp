@@ -148,7 +148,7 @@ class Trainer:
 
             # Early Stopping Check
             if self.patience_counter >= self.early_stop_patience:
-                print(f"\n⏹ Early stopping triggered at epoch {epoch}")
+                print(f"\n Early stopping triggered at epoch {epoch}")
                 break
 
             self._save_checkpoint("last.pt", epoch, val_loss)
@@ -177,7 +177,7 @@ class Trainer:
         """Loads a checkpoint to resume training."""
         filepath = Path(filepath)
         if not filepath.exists():
-            print(f"⚠️ Checkpoint not found: '{filepath}'.")
+            print(f"Checkpoint not found: '{filepath}'.")
             return 1
 
         checkpoint = torch.load(filepath, map_location=self.device)

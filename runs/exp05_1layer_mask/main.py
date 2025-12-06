@@ -111,15 +111,21 @@ def main():
     report_file_csv = exp_dir / "evaluation_results.csv"
     report_history_img = exp_dir / "training_history.png"
     config_file_json = exp_dir / "config.json"
+    qs_file_npy = exp_dir / "qs.npy"
     qs: np.ndarray = powerspace(
         CONFIG["simulation"]["q_min"],
         CONFIG["simulation"]["q_max"],
         CONFIG["simulation"]["q_points"],
         CONFIG["simulation"]["power"])
+
+    np.save(qs_file_npy, qs)
+    print(f"qs file saved at '{qs_file_npy}'")
+
     save_config(CONFIG, config_file_json)
     print(f"Config file saved at '{config_file_json}'")
     print("Config:")
     pprint(CONFIG)
+
     ensure_data_exists(qs, CONFIG, h5_file)
 
     train_loader, val_loader, test_loader = get_dataloaders(qs, CONFIG, h5_file, stats_file)
