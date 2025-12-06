@@ -39,7 +39,7 @@ class XRRInferenceEngine:
         self.target_qs = powerspace(q_min, q_max, n_points, power=power).astype(np.float32)
 
         # 3. 전처리기 초기화
-        # 여기서 target_qs를 넘겨주면, process_input에서 
+        # 여기서 target_qs를 넘겨주면, process_input에서
         # 들어오는 모든 데이터(등간격)를 이 target_qs(비선형)에 맞춰 내삽합니다.
         self.processor = XRRPreprocessor(
             qs=self.target_qs,

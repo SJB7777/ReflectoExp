@@ -56,7 +56,8 @@ class XRRPreprocessor:
         # q_raw(실측) 위의 점들을 self.target_q(모델 그리드) 위치로 옮깁니다.
         # 값이 없는 구간(범위 밖)은 left/right=0.0으로 채웁니다.
         R_interp = np.interp(self.target_q, q_raw, R_log, left=0.0, right=0.0)
-
+        # padding_val = -15.0
+        # R_interp = np.interp(self.target_q, q_raw, R_log, left=padding_val, right=padding_val)
         # 4. Masking (실제 측정 범위 밖은 0 처리)
         # 모델 그리드(target_q) 중 실측 데이터(q_raw) 범위 안에 있는 것만 유효(1)
         q_valid_mask = (self.target_q >= np.min(q_raw)) & (self.target_q <= np.max(q_raw))
