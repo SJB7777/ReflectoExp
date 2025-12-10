@@ -19,7 +19,7 @@ CONFIG = {
     },
     "simulation": {
         "wavelength": 1.54,
-        "n_samples": int(1e6),
+        "n_samples": int(1e3),
         "q_points": 1000,
         "q_min": tth2q(0.1),
         "q_max": tth2q(15),
@@ -33,7 +33,7 @@ CONFIG = {
     },
     "training": {
         "batch_size": 32,
-        "epochs": 100,
+        "epochs": 30,
         "lr": 0.0006119557822568638,
         "weight_decay": 0.0005310131070268705,
         "val_ratio": 0.2,

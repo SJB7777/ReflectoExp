@@ -1,4 +1,5 @@
 from pathlib import Path
+from pprint import pprint
 
 import numpy as np
 import simulate
@@ -110,13 +111,20 @@ def main():
     report_file_csv = exp_dir / "evaluation_results.csv"
     report_history_img = exp_dir / "training_history.png"
     config_file_json = exp_dir / "config.json"
+    qs_file_npy = exp_dir / "qs.npy"
     qs: np.ndarray = powerspace(
         CONFIG["simulation"]["q_min"],
         CONFIG["simulation"]["q_max"],
         CONFIG["simulation"]["q_points"],
         CONFIG["simulation"]["power"])
+
+    np.save(qs_file_npy, qs)
+    print(f"qs file saved at '{qs_file_npy}'")
+
     save_config(CONFIG, config_file_json)
     print(f"Config file saved at '{config_file_json}'")
+    print("Config:")
+    pprint(CONFIG)
 
     ensure_data_exists(qs, CONFIG, h5_file)
 
@@ -147,7 +155,12 @@ def main():
     )
 
     print("Starting training...")
-    trainer.train(CONFIG["training"]["epochs"], last_checkpoint_file)
+    if last_checkpoint_file.exists():
+        print(f"last_checkpoint_file: '{last_checkpoint_file}' has found")
+        trainer.train(CONFIG["training"]["epochs"], last_checkpoint_file)
+    else:
+        print(f"last_checkpoint_file: '{last_checkpoint_file}' has not found")
+        trainer.train(CONFIG["training"]["epochs"])
 
     print("\n" + "="*50)
     print("Performing Final Test Evaluation")
