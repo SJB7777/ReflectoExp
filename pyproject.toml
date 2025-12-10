@@ -37,6 +37,7 @@ dependencies = [
     "genx3",
     "bumps>=1.0.3",
     "optuna>=4.6.0",
+    "cycler>=0.12.1",
 ]
 
 [[tool.uv.index]]
