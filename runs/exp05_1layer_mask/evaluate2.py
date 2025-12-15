@@ -51,14 +51,14 @@ def calculate_all_foms(qs, preds, targets):
     for i in tqdm(range(len(preds))):
         p_pred = ParamSet(preds[i][0], preds[i][1], preds[i][2])
         p_true = ParamSet(targets[i][0], targets[i][1], targets[i][2])
-        
+
         # param2refl returns (1, len(qs)) usually, need flatten
         curve_pred = param2refl(qs, [p_pred]).flatten()
         curve_true = param2refl(qs, [p_true]).flatten()
-        
+
         val = fom_log(curve_true, curve_pred)
         foms.append(val)
-        
+
     return np.array(foms)
 
 # ------------------------------------------------------------
