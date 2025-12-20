@@ -4,7 +4,7 @@ import numpy as np
 from reflecto_exp.physics_utils import tth2q
 
 CONFIG = {
-    "exp_name": "power1",
+    "exp_name": "sample",
     "base_dir": Path(r"D:\Members\IsaacYong\Data\XRR_AI\exp07"),
     
     "param_ranges": {
