@@ -1,7 +1,7 @@
 import numpy as np
 
-from reflecto.physics_utils import tth2q
-from reflecto.simulate.simulator import ParamSet, XRRSimulator
+from reflecto_exp.physics_utils import tth2q
+from reflecto_exp.simulate.simulator import ParamSet, XRRSimulator
 
 
 def generate_dummy_xrr(qs, param: ParamSet):

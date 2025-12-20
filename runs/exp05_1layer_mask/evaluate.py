@@ -12,9 +12,8 @@ from dataset import XRR1LayerDataset
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from xrr_model import XRR1DRegressor
+from reflecto_exp.math_utils import powerspace
 
-from reflecto.math_utils import powerspace
-from reflecto.simulate.simul_genx import ParamSet, param2refl
 
 # ------------------------------------------------------------
 # 0. Global Style Settings

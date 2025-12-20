@@ -11,7 +11,7 @@ sys.path.append(str(current_dir))
 
 from config import CONFIG
 from dataset import XRRPreprocessor
-from reflecto.math_utils import powerspace
+from reflecto_exp.math_utils import powerspace
 
 def inspect_statistics(stats_file):
     print("\n=== [1] Statistics Check (stats.pt) ===")

@@ -7,7 +7,7 @@ import torch
 from config import CONFIG
 from dataset import XRRPreprocessor
 from xrr_model import XRR1DRegressor
-from reflecto.math_utils import powerspace  # [필수] powerspace 임포트
+from reflecto_exp.math_utils import powerspace  # [필수] powerspace 임포트
 
 class XRRInferenceEngine:
     def __init__(self, exp_dir=None):

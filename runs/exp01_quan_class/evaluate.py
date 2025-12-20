@@ -6,8 +6,8 @@ import numpy as np
 import seaborn as sns
 import torch
 import torch.nn as nn
-from reflecto.dataset import DatasetH5, ParamQuantizer
-from reflecto.model import XRRClassifier
+from reflecto_exp.dataset import DatasetH5, ParamQuantizer
+from reflecto_exp.model import XRRClassifier
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
