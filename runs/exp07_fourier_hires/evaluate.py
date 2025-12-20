@@ -14,7 +14,6 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from xrr_model import XRRPhysicsModel
 
-from reflecto_exp.math_utils import powerspace
 from reflecto_exp.simulate.simul_genx import ParamSet, param2refl
 
 
@@ -392,11 +391,10 @@ def main():
         return
 
     # 2. Q-Vector 생성 (물리 모델 계산용)
-    qs = powerspace(
+    qs = np.linspace(
         CONFIG["simulation"]["q_min"], 
         CONFIG["simulation"]["q_max"], 
         CONFIG["simulation"]["q_points"], 
-        CONFIG["simulation"]["power"]
     )
 
     # 3. Test DataLoader 준비

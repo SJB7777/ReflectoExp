@@ -7,7 +7,7 @@ import numpy as np
 import torch
 from xrr_model import XRRPhysicsModel
 
-from reflecto_exp.math_utils import i0_normalize, powerspace
+from reflecto_exp.math_utils import i0_normalize
 from reflecto_exp.simulate.simul_genx import ParamSet, param2refl
 
 
@@ -79,7 +79,7 @@ class XRRInferenceEngine:
 
     def _init_processor(self):
         sim = self.config["simulation"]
-        self.target_qs = powerspace(sim["q_min"], sim["q_max"], sim["q_points"], power=sim["power"]).astype(np.float32)
+        self.target_qs = np.linspace(sim["q_min"], sim["q_max"], sim["q_points"]).astype(np.float32)
         self.processor = XRRPreprocessor(self.target_qs, self.exp_dir / "stats.pt", self.device)
 
     def _load_model(self):
@@ -108,7 +108,7 @@ class XRRInferenceEngine:
 
         y_real = self.processor.denormalize(y_pred_norm)
         # 물리적 제약조건 적용 (음수 방지)
-        y_real = np.maximum(y_real, [1.0, 0.0, 0.0]) 
+        y_real = np.maximum(y_real, [1.0, 0.0, 0.0])
 
         return ParamSet(thickness=float(y_real[0]), roughness=float(y_real[1]), sld=float(y_real[2]))
 
@@ -120,14 +120,14 @@ class XRRInferenceEngine:
         plt.figure(figsize=(10, 6))
         plt.plot(q_measured, i0_normalize(R_measured), 'ko', markersize=3, alpha=0.3, label='Measured Data')
         plt.plot(q_measured, R_ai, 'r--', lw=2, label=f'AI Guess (d={ai_params.thickness:.1f}Å)')
-        
+
         plt.yscale('log')
         plt.xlabel(r'$q$ ($\AA^{-1}$)')
         plt.ylabel('Reflectivity')
         plt.title('Initial AI Prediction (Guess)', fontsize=14, fontweight='bold')
         plt.legend()
         plt.grid(True, which='both', alpha=0.2)
-        
+
         if save_path:
             plt.savefig(save_path, dpi=150)
         plt.show()

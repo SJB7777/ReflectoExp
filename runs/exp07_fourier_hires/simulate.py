@@ -49,15 +49,12 @@ def generate_1layer_data(qs: np.ndarray, config: dict, h5_file: Path | str):
 if __name__ == "__main__":
     from config import CONFIG
 
-    from reflecto_exp.math_utils import powerspace
-
     exp_dir = Path(CONFIG["base_dir"]) / CONFIG["exp_name"]
     exp_dir.mkdir(parents=True, exist_ok=True)
 
     h5_file = exp_dir / "dataset.h5"
-    qs: np.ndarray = powerspace(
+    qs: np.ndarray = np.linspace(
         CONFIG["simulation"]["q_min"],
         CONFIG["simulation"]["q_max"],
-        CONFIG["simulation"]["q_points"],
-        CONFIG["simulation"]["power"])
+        CONFIG["simulation"]["q_points"])
     generate_1layer_data(qs, CONFIG, h5_file)

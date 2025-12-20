@@ -7,8 +7,8 @@ from dataset import XRR1LayerDataset
 from evaluate import evaluate_pipeline
 from torch.utils.data import DataLoader
 from train import Trainer
-from xrr_model import XRRPhysicsModel  # [FIX] Correct Import
-from reflecto_exp.math_utils import powerspace
+from xrr_model import XRRPhysicsModel
+
 
 def set_seed(seed: int = 42):
     torch.manual_seed(seed)
@@ -38,11 +38,11 @@ def get_dataloaders(qs, config, h5_file, stats_file):
     for mode in ["train", "val", "test"]:
         # Only apply augment to train (handled inside Dataset logic based on mode='train')
         ds = XRR1LayerDataset(**common_args, mode=mode, 
-                              val_ratio=config["training"]["val_ratio"], 
-                              test_ratio=config["training"]["test_ratio"])
+                            val_ratio=config["training"]["val_ratio"], 
+                            test_ratio=config["training"]["test_ratio"])
         loaders.append(DataLoader(ds, batch_size=config["training"]["batch_size"], 
-                                  shuffle=(mode=="train"), num_workers=config["training"]["num_workers"],
-                                  pin_memory=torch.cuda.is_available()))
+                        shuffle=(mode=="train"), num_workers=config["training"]["num_workers"],
+                        pin_memory=torch.cuda.is_available()))
     return loaders
 
 def main():
@@ -57,8 +57,8 @@ def main():
     checkpoint_file = exp_dir / "best.pt"
     qs_file = exp_dir / "qs.npy"
     
-    qs = powerspace(CONFIG["simulation"]["q_min"], CONFIG["simulation"]["q_max"], 
-                    CONFIG["simulation"]["q_points"], CONFIG["simulation"]["power"])
+    qs = np.linspace(CONFIG["simulation"]["q_min"], CONFIG["simulation"]["q_max"],
+                    CONFIG["simulation"]["q_points"])
     np.save(qs_file, qs)
     save_config(CONFIG, exp_dir / "config.json")
     

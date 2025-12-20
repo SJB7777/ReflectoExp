@@ -7,7 +7,6 @@ CONFIG = {
     "exp_name": "exp07_fourier_hires",
     "base_dir": Path(r"C:\Warehouse\data\XRR_AI\mask"),
     
-    # [Point 2] 물리적으로 넉넉한 커버리지
     "param_ranges": {
         "thickness": (10.0, 1200.0),  # 1200A까지 커버 (고주파수 극한 테스트)
         "roughness": (0.0, 40.0),     # 매우 거친 표면까지
@@ -22,7 +21,6 @@ CONFIG = {
         "q_points": 2000,             # [수정] 500 -> 2000 (Nyquist 안전권 확보)
         "q_min": tth2q(0.05),         # 저각 정보 강화
         "q_max": tth2q(12.0),         # 고각까지 (약 q=0.8~0.9)
-        "power": 0.8                  # [수정] 저각에 조금 더 집중하도록 power 낮춤 (1.0=Linear)
     },
     "model": {
         "use_fourier": True,
