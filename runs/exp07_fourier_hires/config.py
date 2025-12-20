@@ -20,7 +20,7 @@ CONFIG = {
         "n_samples": int(5e4),        # 기본 5만장 (Augment로 x50배 효과)
         "q_points": 2000,             # [수정] 500 -> 2000 (Nyquist 안전권 확보)
         "q_min": tth2q(0.05),         # 저각 정보 강화
-        "q_max": tth2q(12.0),         # 고각까지 (약 q=0.8~0.9)
+        "q_max": tth2q(15.0),
     },
     "model": {
         "use_fourier": True,
