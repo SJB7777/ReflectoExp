@@ -4,8 +4,8 @@ import numpy as np
 from reflecto_exp.physics_utils import tth2q
 
 CONFIG = {
-    "exp_name": "exp07_fourier_hires",
-    "base_dir": Path(r"C:\Warehouse\data\XRR_AI\mask"),
+    "exp_name": "power1",
+    "base_dir": Path(r"D:\Members\IsaacYong\Data\XRR_AI\exp07"),
     
     "param_ranges": {
         "thickness": (10.0, 1200.0),  # 1200A까지 커버 (고주파수 극한 테스트)
