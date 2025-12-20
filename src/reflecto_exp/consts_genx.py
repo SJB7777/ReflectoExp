@@ -9,7 +9,7 @@ XRAY_TUBE: Final[Instrument] = Instrument(
     I0=1.0,
     Ibkg=1e-10,
     res=0.005,
-    restype=ResType.fast_conv, # 분해능 컨볼루션
+    restype=ResType.fast_conv,
     footype=FootType.gauss
 )
 

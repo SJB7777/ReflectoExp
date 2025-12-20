@@ -99,7 +99,7 @@ def main():
 
     set_seed(42)
     if not Path(CONFIG["base_dir"]).exists():
-        raise FileNotFoundError(f"Base directory {CONFIG["base_dir"]} does not exist.")
+        raise FileNotFoundError(f"Base directory {CONFIG['base_dir']} does not exist.")
     exp_dir = Path(CONFIG["base_dir"]) / CONFIG["exp_name"]
     exp_dir.mkdir(parents=True, exist_ok=True)
 
@@ -107,9 +107,12 @@ def main():
     stats_file = exp_dir / "stats.pt"
     checkpoint_file = exp_dir / "best.pt"
     last_checkpoint_file = exp_dir / "last.pt"
-    report_file_img = exp_dir / "error_distribution.png"
-    report_file_csv = exp_dir / "evaluation_results.csv"
-    report_history_img = exp_dir / "training_history.png"
+    
+    # [제거됨] evaluate.py가 내부적으로 경로를 생성하므로 여기서 정의할 필요 없음
+    # report_file_img = exp_dir / "error_distribution.png"
+    # report_file_csv = exp_dir / "evaluation_results.csv"
+    # report_history_img = exp_dir / "training_history.png"
+    
     config_file_json = exp_dir / "config.json"
     qs_file_npy = exp_dir / "qs.npy"
     qs: np.ndarray = powerspace(
@@ -174,9 +177,9 @@ def main():
         test_loader=test_loader,
         checkpoint_path=checkpoint_file,
         stats_path=stats_file,
-        report_img_path=report_file_img,
-        report_csv_path=report_file_csv,
-        report_history_path=report_history_img
+        qs=qs,
+        output_dir=exp_dir,
+        calc_physics_fom=True
     )
 
 

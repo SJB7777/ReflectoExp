@@ -49,7 +49,7 @@ class Sim_Vars:
         self.s_d   = {sio_d}
         self.s_sig = {sio_sig}
         self.s_sld = {sio_sld}
-        
+
         # [추가됨] 기기 관련 변수
         self.i0    = 1.0
         self.s_len = 10.0  # 샘플 길이 (mm)
@@ -74,10 +74,10 @@ class Sim_Vars:
     # --- Instrument (I0, Footprint) ---
     def set_i0(self, v):    self.i0 = float(v)
     def get_i0(self):       return self.i0
-    
+
     def set_s_len(self, v): self.s_len = float(v)
     def get_s_len(self):    return self.s_len
-    
+
     def set_beam_w(self, v): self.beam_w = float(v)
     def get_beam_w(self):    return self.beam_w
 
@@ -96,9 +96,9 @@ sample = Sample(Stacks=[Stack(Layers=[Film, SiO2])], Ambient=Amb, Substrate=Sub)
 
 # [핵심 변경] Instrument에 samplelen과 beamw 연결
 inst = Instrument(
-    probe=Probe.xray, wavelength=1.54, coords=Coords.q, 
-    I0=v.get_i0(), Ibkg=1e-10, res=0.002, 
-    restype=ResType.fast_conv, 
+    probe=Probe.xray, wavelength=1.54, coords=Coords.q,
+    I0=v.get_i0(), Ibkg=1e-10, res=0.002,
+    restype=ResType.fast_conv,
     footype=FootType.gauss,     # Footprint 보정 켜짐
     samplelen=v.get_s_len(),    # 샘플 길이 변수 연결
     beamw=v.get_beam_w()        # 빔 폭 변수 연결
@@ -150,13 +150,15 @@ def Sim(data):
         # [추가] 빔 폭 (보통 고정하거나 미세 조정)
         p_beam = pars.append("v.set_beam_w", model)
         p_beam.value = 0.1   # 초기값 0.1mm (슬릿 크기)
-        p_beam.min = 0.01; p_beam.max = 0.5
+        p_beam.min = 0.01
+        p_beam.max = 0.5
         p_beam.fit = False   # 일단 고정 (원하면 True)
 
         model.parameters = pars
 
         # --- Step 1: I0 & Footprint Fitting (Linear) ---
-        if verbose: print("\n[GenX] Step 1: Fitting I0 & Sample Length...")
+        if verbose:
+            print("\n[GenX] Step 1: Fitting I0 & Sample Length...")
         model.set_fom_func(fom_funcs.diff) # Linear Scale
 
         # I0와 Sample Length는 서로 스케일에 영향을 주므로 같이 피팅
@@ -164,24 +166,33 @@ def Sim(data):
         p_slen.fit = True
 
         # 나머지는 끔
-        p_f_d.fit = False; p_f_sig.fit = False; p_f_sld.fit = False
-        p_s_d.fit = False; p_s_sig.fit = False; p_s_sld.fit = False
+        p_f_d.fit = False
+        p_f_sig.fit = False
+        p_f_sld.fit = False
+        p_s_d.fit = False
+        p_s_sig.fit = False
+        p_s_sld.fit = False
 
         res1 = model.bumps_fit(method="de", steps=300)
         model.bumps_update_parameters(res1)
-        if verbose: 
+        if verbose:
             print(f"  -> I0: {p_i0.value:.3f}, Sample Len: {p_slen.value:.2f} mm")
 
         # --- Step 2: Full Fitting (Log) ---
-        if verbose: print("[GenX] Step 2: Fitting All Params (Log)...")
+        if verbose:
+            print("[GenX] Step 2: Fitting All Params (Log)...")
         model.set_fom_func(fom_funcs.log)
 
         # 미세조정 위해 I0, SampleLen 켜둠 (원하면 꺼도 됨)
         p_i0.fit = True
-        p_slen.fit = True 
+        p_slen.fit = True
 
-        p_f_d.fit = True; p_f_sig.fit = True; p_f_sld.fit = True
-        p_s_d.fit = True; p_s_sig.fit = True; p_s_sld.fit = True
+        p_f_d.fit = True
+        p_f_sig.fit = True
+        p_f_sld.fit = True
+        p_s_d.fit = True
+        p_s_sig.fit = True
+        p_s_sld.fit = True
 
         res2 = model.bumps_fit(method="de", steps=800, pop=20, tol=0.002)
         model.bumps_update_parameters(res2)

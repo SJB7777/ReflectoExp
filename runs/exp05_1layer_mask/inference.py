@@ -1,3 +1,5 @@
+import json
+
 from pathlib import Path
 import numpy as np
 import torch
@@ -20,18 +22,22 @@ class XRRInferenceEngine:
 
         self.stats_file = exp_dir / "stats.pt"
         self.checkpoint_file = exp_dir / "best.pt"
+        self.config_file = exp_dir / "config.json"
 
-        if not self.stats_file.exists():
-            raise FileNotFoundError(f"Stats not found: {self.stats_file}")
-        if not self.checkpoint_file.exists():
-            raise FileNotFoundError(f"Checkpoint not found: {self.checkpoint_file}")
+        if self.config_file.exists():
+            with open(self.config_file, "r") as f:
+                self.train_config = json.load(f)
+            print(f"[Inference] Loaded training config from {self.config_file}")
+        else:
+            print("[Inference] Warning: config.json not found. Fallback to current global CONFIG.")
+            self.train_config = CONFIG
 
         # 2. Master Grid 설정 (학습 때와 동일해야 함!)
-        # [수정됨] linspace 대신 powerspace 사용
-        q_min = CONFIG["simulation"]["q_min"]
-        q_max = CONFIG["simulation"]["q_max"]
-        n_points = CONFIG["simulation"]["q_points"]
-        power = CONFIG["simulation"]["power"]
+        sim_conf = self.train_config["simulation"]
+        q_min = sim_conf["q_min"]
+        q_max = sim_conf["q_max"]
+        n_points = sim_conf["q_points"]
+        power = sim_conf["power"]
 
         print(f"[Inference] Grid Generation: Power={power}, Points={n_points}")
 

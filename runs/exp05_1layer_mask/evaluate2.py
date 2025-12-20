@@ -1,16 +1,16 @@
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
-from torch.utils.data import DataLoader
-from tqdm import tqdm  # 진행상황 표시용
 
 # === User Modules ===
 from config import CONFIG
 from dataset import XRR1LayerDataset
+from torch.utils.data import DataLoader
+from tqdm import tqdm  # 진행상황 표시용
 from xrr_model import XRR1DRegressor
 from reflecto_exp.math_utils import powerspace
 from reflecto_exp.simulate.simul_genx import ParamSet, param2refl
@@ -51,14 +51,14 @@ def calculate_all_foms(qs, preds, targets):
     for i in tqdm(range(len(preds))):
         p_pred = ParamSet(preds[i][0], preds[i][1], preds[i][2])
         p_true = ParamSet(targets[i][0], targets[i][1], targets[i][2])
-        
+
         # param2refl returns (1, len(qs)) usually, need flatten
         curve_pred = param2refl(qs, [p_pred]).flatten()
         curve_true = param2refl(qs, [p_true]).flatten()
-        
+
         val = fom_log(curve_true, curve_pred)
         foms.append(val)
-        
+
     return np.array(foms)
 
 # ------------------------------------------------------------
@@ -250,25 +250,25 @@ def save_investor_report_plots(df: pd.DataFrame, param_names: list[str], save_pa
 # 5. Pipeline
 # ------------------------------------------------------------
 def evaluate_pipeline(test_loader, checkpoint_path, stats_path, qs, output_dir):
-    
+
     if not checkpoint_path.exists():
         print("Checkpoint not found.")
         return
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
+
     # Load Stats & Model
     stats = torch.load(stats_path, map_location="cpu")
     param_mean = stats["param_mean"]
     param_std = stats["param_std"]
-    
+
     ckpt = torch.load(checkpoint_path, map_location=device)
     model = XRR1DRegressor(**ckpt["config"]["model_args"]).to(device)
     model.load_state_dict(ckpt["model_state_dict"])
     model.eval()
-    
-    print(f"Model loaded. Running Inference...")
-    
+
+    print("Model loaded. Running Inference...")
+
     preds_list, targets_list = [], []
     with torch.no_grad():
         for X, y in test_loader:
@@ -276,35 +276,35 @@ def evaluate_pipeline(test_loader, checkpoint_path, stats_path, qs, output_dir):
             pred = model(X)
             preds_list.append(pred.cpu())
             targets_list.append(y)
-            
+
     preds_norm = torch.cat(preds_list)
     targets_norm = torch.cat(targets_list)
-    
+
     # Denormalize
     preds_real = (preds_norm * param_std + param_mean).numpy()
     targets_real = (targets_norm * param_std + param_mean).numpy()
-    
+
     # --- FOM Calculation (NEW) ---
     # 모든 샘플에 대해 시뮬레이션 및 FOM 계산
     foms = calculate_all_foms(qs, preds_real, targets_real)
-    
+
     # Metrics
     metrics = calculate_metrics(preds_real, targets_real)
     param_names = ["Thickness (Å)", "Roughness (Å)", "SLD (10⁻⁶ Å⁻²)"]
-    
+
     # 1. Save CSV (with FOM)
     df = generate_results_df(preds_real, targets_real, metrics["errors"], foms, param_names)
     df.to_csv(output_dir / "evaluation_results_with_fom.csv", index=False)
-    
+
     # 2. Plots
     save_investor_report_plots(df, param_names, output_dir / "investor_metrics_report.png")
-    
+
     # 3. FOM Report (NEW Graph)
     save_fom_report(foms, output_dir / "investor_fom_stats.png")
-    
+
     # 4. Curve Proof with FOM Titles (Updated)
     save_curve_comparison(qs, preds_real, targets_real, foms, output_dir / "investor_curve_proof.png")
-    
+
     # Console Output
     print("\n" + "="*60)
     print(f"{'Metric':<20} | {'Value':<10}")
@@ -319,29 +319,29 @@ def evaluate_pipeline(test_loader, checkpoint_path, stats_path, qs, output_dir):
 def main():
     base = Path(CONFIG["base_dir"])
     exp_dir = base / CONFIG["exp_name"]
-    
+
     qs = powerspace(
         CONFIG["simulation"]["q_min"],
         CONFIG["simulation"]["q_max"],
         CONFIG["simulation"]["q_points"],
         CONFIG["simulation"]["power"]
     )
-    
+
     h5_file = exp_dir / "dataset.h5"
     stats_file = exp_dir / "stats.pt"
     ckpt_file = exp_dir / "best.pt"
-    
+
     if not h5_file.exists():
         print("Dataset not found.")
         return
-        
+
     test_set = XRR1LayerDataset(qs, h5_file, stats_file, mode="test")
     loader = DataLoader(
         test_set,
         batch_size=CONFIG["training"]["batch_size"],
         shuffle=False
     )
-    
+
     evaluate_pipeline(
         test_loader=loader,
         checkpoint_path=ckpt_file,
