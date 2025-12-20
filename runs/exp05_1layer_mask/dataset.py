@@ -67,7 +67,10 @@ class XRRPreprocessor:
         mean = self.param_mean.cpu().numpy() if isinstance(self.param_mean, torch.Tensor) else self.param_mean
         std = self.param_std.cpu().numpy() if isinstance(self.param_std, torch.Tensor) else self.param_std
 
-        return params_norm * std + mean
+        params_real = params_norm * std + mean
+        params_real = np.maximum(params_real, 1e-3)
+
+        return params_real
 
     def normalize_parameters(self, params_real):
         """Physical Values -> Model Target (Norm)"""

@@ -125,7 +125,7 @@ class XRRSimulator:
             # Ranges
             thickness_range: tuple[float, float] = (10.0, 500.0),
             roughness_range: tuple[float, float] = (0.0, 20.0),
-            sld_range: tuple[float, float] = (5.0, 20.0),
+            sld_range: tuple[float, float] = (5.0, 150.0),
             sio2_thick_range: tuple[float, float] = (10.0, 25.0),
             sio2_rough_range: tuple[float, float] = (2.0, 5.0),
             sio2_sld_mean: float = 18.8,
