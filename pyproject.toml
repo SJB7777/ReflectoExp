@@ -1,5 +1,5 @@
 [project]
-name = "reflecto"
+name = "reflecto_exp"
 version = "0.1.1"
 description = "Machine learning tools for X-ray reflectivity analysis"
 readme = "README.md"

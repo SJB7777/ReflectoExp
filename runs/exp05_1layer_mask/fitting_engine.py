@@ -5,7 +5,7 @@ from genx.data import DataList, DataSet
 from genx.model import Model
 from genx.parameters import Parameters
 
-from reflecto.simulate.simul_genx import ParamSet
+from reflecto_exp.simulate.simul_genx import ParamSet
 
 
 class GenXFitter:

@@ -12,8 +12,8 @@ from tqdm import tqdm  # 진행상황 표시용
 from config import CONFIG
 from dataset import XRR1LayerDataset
 from xrr_model import XRR1DRegressor
-from reflecto.math_utils import powerspace
-from reflecto.simulate.simul_genx import ParamSet, param2refl
+from reflecto_exp.math_utils import powerspace
+from reflecto_exp.simulate.simul_genx import ParamSet, param2refl
 
 # 스타일 설정
 plt.style.use('seaborn-v0_8-paper')

@@ -2,8 +2,8 @@ from pathlib import Path
 
 import numpy as np
 
-from reflecto.physics_utils import tth2q
-from reflecto.simulate.simulator import XRRSimulator
+from reflecto_exp.physics_utils import tth2q
+from reflecto_exp.simulate.simulator import XRRSimulator
 
 
 def generate_1layer_data(config: dict, h5_file: Path | str):

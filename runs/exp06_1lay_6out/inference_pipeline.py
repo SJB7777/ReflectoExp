@@ -3,9 +3,9 @@ from pathlib import Path
 from fitting_engine import GenXFitter
 from inference import XRRInferenceEngine
 
-from reflecto.io_utils import load_xrr_dat
-from reflecto.physics_utils import tth2q
-from reflecto.simulate.simul_genx import ParamSet
+from reflecto_exp.io_utils import load_xrr_dat
+from reflecto_exp.physics_utils import tth2q
+from reflecto_exp.simulate.simul_genx import ParamSet
 
 
 def run_xrr_analysis(

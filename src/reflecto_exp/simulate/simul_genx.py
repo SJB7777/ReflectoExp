@@ -7,9 +7,9 @@ import numpy as np
 from genx.models.spec_nx import Layer, Sample, Specular, Stack
 from tqdm import tqdm
 
-from reflecto.consts_genx import AIR, SURFACE_SIO2, XRAY_TUBE
-from reflecto.physics_utils import r_e
-from reflecto.simulate.noise import add_noise
+from reflecto_exp.consts_genx import AIR, SURFACE_SIO2, XRAY_TUBE
+from reflecto_exp.physics_utils import r_e
+from reflecto_exp.simulate.noise import add_noise
 
 
 @dataclass

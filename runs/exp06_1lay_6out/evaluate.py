@@ -9,7 +9,7 @@ from dataset import XRR1LayerDataset
 from torch.utils.data import DataLoader
 from xrr_model import XRR1DRegressor
 
-from reflecto.math_utils import powerspace
+from reflecto_exp.math_utils import powerspace
 
 
 def calculate_metrics(preds: np.ndarray, targets: np.ndarray) -> dict[str, np.ndarray]:

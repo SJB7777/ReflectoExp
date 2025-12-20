@@ -2,7 +2,7 @@ from pathlib import Path
 
 import numpy as np
 
-from reflecto.simulate.simul_genx import XRRSimulator
+from reflecto_exp.simulate.simul_genx import XRRSimulator
 
 
 def generate_1layer_data(qs: np.ndarray, config: dict, h5_file: Path | str):
@@ -55,7 +55,7 @@ def generate_1layer_data(qs: np.ndarray, config: dict, h5_file: Path | str):
 if __name__ == "__main__":
     from config import CONFIG
 
-    from reflecto.math_utils import powerspace
+    from reflecto_exp.math_utils import powerspace
 
     exp_dir = Path(CONFIG["base_dir"]) / CONFIG["exp_name"]
     exp_dir.mkdir(parents=True, exist_ok=True)

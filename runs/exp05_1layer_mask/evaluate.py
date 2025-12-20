@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from config import CONFIG
 from dataset import XRR1LayerDataset
 from xrr_model import XRR1DRegressor
-from reflecto.math_utils import powerspace
+from reflecto_exp.math_utils import powerspace
 
 
 # ------------------------------------------------------------

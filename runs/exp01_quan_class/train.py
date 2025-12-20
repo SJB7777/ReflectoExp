@@ -2,8 +2,8 @@ import os
 
 import torch
 import torch.nn as nn
-from reflecto.dataset import DatasetH5, ParamQuantizer
-from reflecto.model import XRRClassifier, validate_epoch
+from reflecto_exp.dataset import DatasetH5, ParamQuantizer
+from reflecto_exp.model import XRRClassifier, validate_epoch
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import StepLR
 from torch.utils.data import DataLoader

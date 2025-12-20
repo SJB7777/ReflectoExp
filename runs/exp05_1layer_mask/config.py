@@ -3,7 +3,7 @@ from pathlib import Path
 
 import numpy as np
 
-from reflecto.physics_utils import tth2q
+from reflecto_exp.physics_utils import tth2q
 
 CONFIG = {
     "exp_name": "power0_95_tune222",

@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from train import Trainer
 from xrr_model import XRR1DRegressor
 
-from reflecto.math_utils import powerspace
+from reflecto_exp.math_utils import powerspace
 
 
 def set_seed(seed: int = 42):
