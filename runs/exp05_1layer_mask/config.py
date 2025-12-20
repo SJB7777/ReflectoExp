@@ -39,7 +39,12 @@ CONFIG = {
         "val_ratio": 0.2,
         "test_ratio": 0.1,
         "patience" : 15,
-        "num_workers": 0
+        "num_workers": 0,
+        "augment": True,
+        "aug_prob": 0.5,
+        "q_shift_sigma": 0.002,   # +/- 0.002 A^-1 shift
+        "intensity_scale": 0.15,  # +/- 15% intensity variation
+        "expand_factor": 10,
     },
 }
 

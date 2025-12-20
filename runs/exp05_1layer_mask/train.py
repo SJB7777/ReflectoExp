@@ -49,7 +49,6 @@ class Trainer:
         self.early_stop_patience = patience
 
         self.history = {"train": [], "val": [], "lr": []}
-
         self.scaler = torch.amp.GradScaler('cuda')
 
         print(f"🚀 Trainer initialized on {self.device}")
@@ -115,12 +114,7 @@ class Trainer:
         """
         Main training loop.
         """
-        start_epoch = 1
-
-        # Load checkpoint if resuming
-        if resume_from:
-            start_epoch = self._load_checkpoint(resume_from)
-
+        start_epoch = self._load_checkpoint(resume_from) if resume_from else 1
         print(f"\nDataset Info: Train={len(self.train_loader.dataset)}, Val={len(self.val_loader.dataset)}")
         print("-" * 60)
 
@@ -154,12 +148,10 @@ class Trainer:
 
             # Early Stopping Check
             if self.patience_counter >= self.early_stop_patience:
-                print(f"\n⏹ Early stopping triggered at epoch {epoch}")
+                print(f"\n Early stopping triggered at epoch {epoch}")
                 break
 
-            # Save Last Model every epoch
-            if epoch == epochs:
-                self._save_checkpoint("last.pt", epoch, val_loss)
+            self._save_checkpoint("last.pt", epoch, val_loss)
 
     def _save_checkpoint(self, filename: str, epoch: int, val_loss: float):
         """Saves model checkpoint with metadata."""
@@ -185,7 +177,7 @@ class Trainer:
         """Loads a checkpoint to resume training."""
         filepath = Path(filepath)
         if not filepath.exists():
-            print(f"⚠️ Checkpoint not found: {filepath}. Starting from scratch.")
+            print(f"Checkpoint not found: '{filepath}'.")
             return 1
 
         checkpoint = torch.load(filepath, map_location=self.device)
@@ -204,5 +196,5 @@ class Trainer:
         self.best_val_loss = checkpoint.get('best_val_loss', float('inf'))
         start_epoch = checkpoint.get('epoch', 0) + 1
 
-        print(f"✅ Checkpoint loaded: {filepath} (Resuming from Epoch {start_epoch})")
+        print(f"Checkpoint loaded: {filepath} (Resuming from Epoch {start_epoch})")
         return start_epoch

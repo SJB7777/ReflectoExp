@@ -26,7 +26,7 @@ def generate_1layer_data(qs: np.ndarray, config: dict, h5_file: Path | str):
         "qs": qs,
         "n_layers": 1,
         "n_samples": simulation["n_samples"],
-        "has_noise": True
+        "has_noise": False
     }
     if param_ranges["thickness"] is not None:
         simulator_args["thickness_range"] = param_ranges["thickness"]

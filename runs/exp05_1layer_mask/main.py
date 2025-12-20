@@ -1,4 +1,5 @@
 from pathlib import Path
+from pprint import pprint
 
 import numpy as np
 import simulate
@@ -43,6 +44,7 @@ def get_dataloaders(qs: np.ndarray, config: dict, h5_file: Path, stats_file: Pat
     """Create Dataset and DataLoaders."""
 
     # Common arguments (Get q-related settings from Config)
+
     dataset_kwargs = {
         "qs": qs,
         "h5_file": h5_file,
@@ -50,8 +52,11 @@ def get_dataloaders(qs: np.ndarray, config: dict, h5_file: Path, stats_file: Pat
         "val_ratio": config["training"]["val_ratio"],
         "test_ratio": config["training"]["test_ratio"],
         "augment": True,
-        "aug_prob": 0.5,
-        "min_scan_range": 0.15
+        "expand_factor" : config["training"]["expand_factor"],
+        "aug_prob" : config["training"]["aug_prob"],
+        "min_scan_range" : 0.15,
+        "q_shift_sigma" : config["training"]["q_shift_sigma"],
+        "intensity_scale" : config["training"]["intensity_scale"]
     }
 
     # Create Dataset instances
@@ -92,33 +97,42 @@ def get_dataloaders(qs: np.ndarray, config: dict, h5_file: Path, stats_file: Pat
 def main():
     print("=== 1-Layer XRR Regression Pipeline Started ===")
 
-    # 1. Setup and Path Preparation
     set_seed(42)
-
+    if not Path(CONFIG["base_dir"]).exists():
+        raise FileNotFoundError(f"Base directory {CONFIG['base_dir']} does not exist.")
     exp_dir = Path(CONFIG["base_dir"]) / CONFIG["exp_name"]
     exp_dir.mkdir(parents=True, exist_ok=True)
 
     h5_file = exp_dir / "dataset.h5"
     stats_file = exp_dir / "stats.pt"
     checkpoint_file = exp_dir / "best.pt"
-    report_file_img = exp_dir / "error_distribution.png"
-    report_file_csv = exp_dir / "evaluation_results.csv"
-    report_history_img = exp_dir / "training_history.png"
+    last_checkpoint_file = exp_dir / "last.pt"
+    
+    # [제거됨] evaluate.py가 내부적으로 경로를 생성하므로 여기서 정의할 필요 없음
+    # report_file_img = exp_dir / "error_distribution.png"
+    # report_file_csv = exp_dir / "evaluation_results.csv"
+    # report_history_img = exp_dir / "training_history.png"
+    
     config_file_json = exp_dir / "config.json"
+    qs_file_npy = exp_dir / "qs.npy"
     qs: np.ndarray = powerspace(
         CONFIG["simulation"]["q_min"],
         CONFIG["simulation"]["q_max"],
         CONFIG["simulation"]["q_points"],
         CONFIG["simulation"]["power"])
+
+    np.save(qs_file_npy, qs)
+    print(f"qs file saved at '{qs_file_npy}'")
+
     save_config(CONFIG, config_file_json)
     print(f"Config file saved at '{config_file_json}'")
-    # 2. Data Preparation
+    print("Config:")
+    pprint(CONFIG)
+
     ensure_data_exists(qs, CONFIG, h5_file)
 
-    # 3. Create Loaders
     train_loader, val_loader, test_loader = get_dataloaders(qs, CONFIG, h5_file, stats_file)
 
-    # 4. Model Initialization
     print("Initializing model...")
     model = XRR1DRegressor(
         q_len=CONFIG["simulation"]["q_points"],
@@ -133,7 +147,6 @@ def main():
     param_count = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f"Model parameters: {param_count:,}")
 
-    # 5. Training Setup and Execution
     trainer = Trainer(
         model=model,
         train_loader=train_loader,
@@ -145,9 +158,13 @@ def main():
     )
 
     print("Starting training...")
-    trainer.train(CONFIG["training"]["epochs"])
+    if last_checkpoint_file.exists():
+        print(f"last_checkpoint_file: '{last_checkpoint_file}' has found")
+        trainer.train(CONFIG["training"]["epochs"], last_checkpoint_file)
+    else:
+        print(f"last_checkpoint_file: '{last_checkpoint_file}' has not found")
+        trainer.train(CONFIG["training"]["epochs"])
 
-    # 6. Final Evaluation
     print("\n" + "="*50)
     print("Performing Final Test Evaluation")
     print("="*50)
@@ -160,9 +177,9 @@ def main():
         test_loader=test_loader,
         checkpoint_path=checkpoint_file,
         stats_path=stats_file,
-        report_img_path=report_file_img,
-        report_csv_path=report_file_csv,
-        report_history_path=report_history_img
+        qs=qs,
+        output_dir=exp_dir,
+        calc_physics_fom=True
     )
 
 
