@@ -150,8 +150,8 @@ class XRR1LayerDataset(Dataset):
         R_raw = self.hf["R"][real_idx]
         q_raw = self.source_q[real_idx] if self.source_q.ndim == 2 else self.source_q
         params_raw = np.array([self.thickness[real_idx],
-                               self.roughness[real_idx],
-                               self.sld[real_idx]], dtype=np.float32)
+                            self.roughness[real_idx],
+                            self.sld[real_idx]], dtype=np.float32)
 
         if self.augment:
             q_raw, R_raw = self.physics_augmenter(q_raw, R_raw)
