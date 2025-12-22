@@ -8,7 +8,7 @@ XRAY_TUBE: Final[Instrument] = Instrument(
     coords=Coords.q,
     I0=1.0,
     Ibkg=1e-10,
-    res=0.005,
+    res=0.0001,
     restype=ResType.fast_conv,
     footype=FootType.gauss
 )
