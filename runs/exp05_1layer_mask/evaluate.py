@@ -1,5 +1,6 @@
-from pathlib import Path
 import argparse  # [New] 커맨드라인 인자 처리를 위해 추가
+from pathlib import Path
+
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,8 +13,8 @@ from dataset import XRR1LayerDataset
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from xrr_model import XRR1DRegressor
-from reflecto_exp.math_utils import powerspace
 
+from reflecto_exp.math_utils import powerspace
 
 # ------------------------------------------------------------
 # 0. Global Style Settings
@@ -93,7 +94,7 @@ def generate_results_df(preds, targets, errors, foms, param_names):
     # FOM 컬럼 추가 (foms가 있을 때만)
     if foms is not None:
         data["FOM_Log"] = foms
-        
+
     return pd.DataFrame(data)
 
 # ------------------------------------------------------------
@@ -137,7 +138,7 @@ def save_investor_report_plots(df: pd.DataFrame, param_names: list[str], save_pa
     n_params = len(param_names)
     fig = plt.figure(figsize=(18, 12), layout='constrained')
     gs = gridspec.GridSpec(3, n_params, figure=fig)
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c'] 
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
 
     for i, name in enumerate(param_names):
         clean = name.split(' (')[0]
@@ -224,8 +225,8 @@ def save_fom_report(foms: np.ndarray, save_path: Path):
         f"  - Top 90% < {np.percentile(foms, 90):.4f}\n"
         f"  - Top 99% < {np.percentile(foms, 99):.4f}"
     )
-    
-    ax2.text(0.1, 0.5, stats_text, fontsize=12, family='monospace', 
+
+    ax2.text(0.1, 0.5, stats_text, fontsize=12, family='monospace',
              verticalalignment='center', transform=ax2.transAxes,
              bbox=dict(boxstyle='round,pad=1', facecolor='#f8f9fa', edgecolor='#dee2e6'))
 
@@ -234,16 +235,16 @@ def save_fom_report(foms: np.ndarray, save_path: Path):
     print(f"Saved FOM Report: {save_path}")
 
 def save_curve_comparison(qs, preds, targets, foms, save_path: Path):
-    if not save_path or foms is None: 
+    if not save_path or foms is None:
         return
 
     # FOM 기준으로 정렬
     sorted_indices = np.argsort(foms)
-    
+
     # Best 2, Random 2, Worst 2 선택
     indices = np.concatenate([
-        sorted_indices[:2], 
-        np.random.choice(sorted_indices[2:-2], 2, replace=False), 
+        sorted_indices[:2],
+        np.random.choice(sorted_indices[2:-2], 2, replace=False),
         sorted_indices[-2:]
     ])
 

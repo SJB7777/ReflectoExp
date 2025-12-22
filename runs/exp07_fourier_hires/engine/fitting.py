@@ -1,10 +1,12 @@
-import numpy as np
 from dataclasses import dataclass
+
+import numpy as np
+from engine.script_builder import GenXScriptBuilder
 from genx import fom_funcs
 from genx.data import DataList, DataSet
 from genx.model import Model
 from genx.parameters import Parameters
-from engine.script_builder import GenXScriptBuilder
+
 
 @dataclass
 class XRRConfig:
@@ -12,13 +14,13 @@ class XRRConfig:
     wavelength: float = 1.54
     beam_width: float = 0.1
     sample_len_init: float = 10.0
-    
+
     # [수정] 물리학적 절대 탐색 범위 (Physical Absolute Bounds)
     thickness_bounds: tuple[float, float] = (10.0, 1200.0)
     sld_bounds: tuple[float, float] = (5.0, 100.0)
     # [핵심] Roughness 상한을 15A로 강제하여 "진동 포기" 현상 방지
-    roughness_bounds: tuple[float, float] = (0.0, 15.0) 
-    
+    roughness_bounds: tuple[float, float] = (0.0, 15.0)
+
     # 최적화 강도
     steps_instrument: int = 200
     steps_structure: int = 800
@@ -32,7 +34,7 @@ class GenXFitter:
         self.R = R / R.max()
         self.nn_params = nn_params
         self.config = config if config else XRRConfig()
-        
+
         self.model = self._initialize_genx_model()
         self.pars_map = {}
 
@@ -44,16 +46,16 @@ class GenXFitter:
 
         model = Model()
         model.data = DataList([ds])
-        
+
         # [조치] AI 예측값을 물리적 범위 내로 Clipping
         init_vals = {
             'f_d': np.clip(float(self.nn_params.thickness), *self.config.thickness_bounds),
             'f_sig': np.clip(float(self.nn_params.roughness), *self.config.roughness_bounds),
-            'f_sld': np.clip(float(self.nn_params.sld), *self.config.sld_bounds), 
+            'f_sld': np.clip(float(self.nn_params.sld), *self.config.sld_bounds),
             's_len': self.config.sample_len_init,
             'beam_w': self.config.beam_width
         }
-        
+
         builder = GenXScriptBuilder()
         model.set_script(builder.build(init_vals))
         model.compile_script()
@@ -63,7 +65,7 @@ class GenXFitter:
         pars = Parameters()
         model = self.model
         cfg = self.config
-        
+
         def add_par(name, val=None, min_v=None, max_v=None, fit=False):
             p = pars.append(name, model)
             if val is not None: p.value = val
@@ -71,7 +73,7 @@ class GenXFitter:
             if max_v is not None: p.max = max_v
             p.fit = fit
             clean_name = name.replace("v.set_", "set_").replace("v.", "")
-            self.pars_map[clean_name] = p 
+            self.pars_map[clean_name] = p
             return p
 
         # Film Layer: 절대 범위 적용
@@ -82,7 +84,7 @@ class GenXFitter:
         # SiO2 & Substrate
         add_par("v.set_s_d",   val=15.0, min_v=5.0, max_v=60.0)
         add_par("v.set_s_sig", val=3.0,  min_v=1.0, max_v=15.0)
-        add_par("v.set_s_sld", val=18.8, min_v=10.0, max_v=25.0) 
+        add_par("v.set_s_sld", val=18.8, min_v=10.0, max_v=25.0)
 
         # Instrument
         add_par("v.set_i0",    val=1.0, min_v=0.1, max_v=10.0)
@@ -120,7 +122,7 @@ class GenXFitter:
                 if model.fom < min_fom:
                     min_fom = model.fom
                     best_d = td
-        
+
         self.pars_map['set_f_d'].value = best_d
         if verbose: print(f"      > Best starting thickness selected: {best_d:.1f}Å")
 

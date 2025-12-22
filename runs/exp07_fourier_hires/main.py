@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import numpy as np
 import simulate
 import torch
@@ -8,6 +9,7 @@ from evaluate import evaluate_pipeline
 from torch.utils.data import DataLoader
 from train import Trainer
 from xrr_model import XRRPhysicsModel
+
 
 def set_seed(seed: int = 42):
     torch.manual_seed(seed)
@@ -44,8 +46,8 @@ def get_dataloaders(qs, config, h5_file, stats_file):
     loaders = []
     for mode in ["train", "val", "test"]:
         # shuffle은 학습 데이터에만 적용
-        ds = XRR1LayerDataset(**common_args, mode=mode, 
-                            val_ratio=t_cfg["val_ratio"], 
+        ds = XRR1LayerDataset(**common_args, mode=mode,
+                            val_ratio=t_cfg["val_ratio"],
                             test_ratio=t_cfg["test_ratio"])
 
         loaders.append(DataLoader(
@@ -100,8 +102,8 @@ def main():
 
     # 5. Trainer 실행
     trainer = Trainer(
-        model, train_loader, val_loader, exp_dir, 
-        lr=CONFIG["training"]["lr"], 
+        model, train_loader, val_loader, exp_dir,
+        lr=CONFIG["training"]["lr"],
         weight_decay=CONFIG["training"]["weight_decay"],
         patience=CONFIG["training"]["patience"]
     )
@@ -109,7 +111,7 @@ def main():
     print("🔥 Training Start...")
     resume_path = exp_dir / "last.pt"
     trainer.train(
-        CONFIG["training"]["epochs"], 
+        CONFIG["training"]["epochs"],
         resume_from=resume_path if resume_path.exists() else None
     )
 

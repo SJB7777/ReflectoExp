@@ -1,6 +1,5 @@
 import json
 from pathlib import Path
-from typing import Optional, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,7 +21,7 @@ class XRRPreprocessor:
         if stats_file and Path(stats_file).exists():
             self.load_stats(stats_file)
 
-    def load_stats(self, stats_file: Union[Path, str]):
+    def load_stats(self, stats_file: Path | str):
         stats = torch.load(stats_file, map_location=self.device, weights_only=True)
         self.param_mean = stats["param_mean"]
         self.param_std = stats["param_std"]
@@ -50,18 +49,18 @@ class XRRPreprocessor:
         """모델의 정규화된 출력을 실제 물리량(A, x10^-6 A^-2)으로 변환"""
         if self.param_mean is None:
             raise ValueError("Normalization statistics not loaded.")
-        
+
         mean = self.param_mean.cpu().numpy() if torch.is_tensor(self.param_mean) else self.param_mean
         std = self.param_std.cpu().numpy() if torch.is_tensor(self.param_std) else self.param_std
-        
+
         return params_norm.detach().cpu().numpy() * std + mean
 
 
 class XRRInferenceEngine:
-    def __init__(self, exp_dir: Union[str, Path], device: Optional[str] = None):
+    def __init__(self, exp_dir: str | Path, device: str | None = None):
         self.exp_dir = Path(exp_dir)
         self.device = torch.device(device if device else ("cuda" if torch.cuda.is_available() else "cpu"))
-        
+
         self._validate_paths()
         self._load_config()
         self._init_processor()
@@ -74,7 +73,7 @@ class XRRInferenceEngine:
                 raise FileNotFoundError(f"Missing required file in {self.exp_dir}: {f}")
 
     def _load_config(self):
-        with open(self.exp_dir / "config.json", "r") as f:
+        with open(self.exp_dir / "config.json") as f:
             self.config = json.load(f)
 
     def _init_processor(self):
@@ -112,7 +111,7 @@ class XRRInferenceEngine:
 
         return ParamSet(thickness=float(y_real[0]), roughness=float(y_real[1]), sld=float(y_real[2]))
 
-    def plot_ai_guess(self, q_measured: np.ndarray, R_measured: np.ndarray, ai_params: ParamSet, save_path: Optional[Path] = None):
+    def plot_ai_guess(self, q_measured: np.ndarray, R_measured: np.ndarray, ai_params: ParamSet, save_path: Path | None = None):
         """AI의 초기 추측값과 실측 데이터를 비교하는 플롯 생성"""
         # AI 예측 파라미터로 곡선 생성
         R_ai = param2refl(q_measured, [ai_params])

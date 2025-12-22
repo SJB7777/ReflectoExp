@@ -2589,6 +2589,11 @@ test = [
     { name = "pytest-mock" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "ruff" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "black", marker = "extra == 'dev'", specifier = ">=22.0.0" },
@@ -2625,6 +2630,9 @@ requires-dist = [
     { name = "tqdm" },
 ]
 provides-extras = ["dev", "test", "docs"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ruff", specifier = ">=0.14.3" }]
 
 [[package]]
 name = "requests"

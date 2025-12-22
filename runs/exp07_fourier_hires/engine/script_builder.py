@@ -1,6 +1,6 @@
 class GenXScriptBuilder:
     """GenX 모델 내부에서 실행될 파이썬 스크립트를 생성합니다."""
-    
+
     def build(self, init_params: dict[str, float]) -> str:
         return f"""
 import numpy as np

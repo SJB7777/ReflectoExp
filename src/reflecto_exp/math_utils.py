@@ -2,6 +2,7 @@ import warnings
 
 import numpy as np
 
+
 def powerspace(
     start: float,
     stop: float,
