@@ -1,16 +1,16 @@
-import numpy as np
-import matplotlib.pyplot as plt
 from pathlib import Path
 
-# 프로젝트 코어 유틸리티
-from reflecto_exp.io_utils import load_xrr_dat
-from reflecto_exp.physics_utils import tth2q
-from reflecto_exp.math_utils import i0_normalize
-from reflecto_exp.simulate.simul_genx import ParamSet, param2refl
+import matplotlib.pyplot as plt
+import numpy as np
+from engine.fitting import GenXFitter, XRRConfig
 
 # 엔진 모듈
 from engine.inference import XRRInferenceEngine
-from engine.fitting import GenXFitter, XRRConfig
+
+# 프로젝트 코어 유틸리티
+from reflecto_exp.math_utils import i0_normalize
+from reflecto_exp.simulate.simul_genx import ParamSet, param2refl
+
 
 class XRRAnalyzer:
     """XRR 분석 및 테스트 통합 클래스 (AI + GenX)"""
@@ -35,10 +35,10 @@ class XRRAnalyzer:
 
         return qs, R_noisy, true_params
 
-    def analyze(self, 
-                q: np.ndarray, 
-                R: np.ndarray, 
-                run_fitting: bool = True, 
+    def analyze(self,
+                q: np.ndarray,
+                R: np.ndarray,
+                run_fitting: bool = True,
                 save_results: bool = False,
                 filename: str = "analysis_result",
                 true_params: ParamSet | None = None):
@@ -68,8 +68,8 @@ class XRRAnalyzer:
         if run_fitting:
             print("Step 2: GenX Refinement (Fitting)...")
             fit_config = XRRConfig(
-                thickness_search_ratio=(0.8, 1.2), 
-                steps_structure=400, 
+                thickness_search_ratio=(0.8, 1.2),
+                steps_structure=400,
                 steps_fine=600
             )
             fitter = GenXFitter(q, R, ai_guess, config=fit_config)
@@ -88,17 +88,17 @@ class XRRAnalyzer:
         """결과 통합 시각화 및 리포트"""
         plt.figure(figsize=(10, 7))
         plt.plot(q, R, 'ko', markersize=3, alpha=0.2, label='Measured Data')
-        
+
         # AI Guess (파란 점선)
         R_ai = param2refl(q, [ai_p])
         plt.plot(q, R_ai, 'b--', alpha=0.7, label=f'AI Guess (d={ai_p.thickness:.1f}Å)')
-        
+
         # Final Fit (빨간 실선)
         plt.plot(q, R_fit, 'r-', lw=2, label=f'Final Fit (d={final_p.thickness:.1f}Å)')
 
         # 만약 Ground Truth(테스트 데이터)가 있다면 표시
         if true_p:
-            plt.axvline(x=0, color='green', label=f'GT: d={true_p.thickness:.1f}Å', alpha=0) 
+            plt.axvline(x=0, color='green', label=f'GT: d={true_p.thickness:.1f}Å', alpha=0)
             print(f"🎯 Accuracy (Thick): {100 - abs(true_p.thickness - final_p.thickness)/true_p.thickness*100:.2f}%")
 
         plt.yscale('log')
@@ -112,7 +112,7 @@ class XRRAnalyzer:
             save_path = self.exp_dir / f"final_{filename}.png"
             plt.savefig(save_path, dpi=150)
             print(f"📊 Final comparison plot saved: {save_path.name}")
-        
+
         plt.show()
 
 # -----------------------------------------------------------------------------

@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
+
 import numpy as np
+
 from reflecto_exp.physics_utils import tth2q
 
 CONFIG = {

@@ -3,6 +3,7 @@ from scipy.ndimage import gaussian_filter1d
 
 from reflecto_exp.simulate.noise import apply_poisson_noise, get_background_noise
 
+
 class XRRAugmentations:
     def __init__(
         self,
@@ -36,7 +37,7 @@ class XRRAugmentations:
         bg_level = np.random.uniform(*self.bg_range)
         N = len(R_aug)
         # noise.py의 get_background_noise 활용 (로그 스케일 기반 생성 가정)
-        bg = get_background_noise(N, bg_level, bg_level + 0.5) 
+        bg = get_background_noise(N, bg_level, bg_level + 0.5)
         R_aug = R_aug + np.abs(bg)
 
         # 3. Dynamic Poisson Noise (Lab vs Synchrotron 모사)

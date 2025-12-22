@@ -170,10 +170,10 @@ def plot_error_heatmap(df: pd.DataFrame, save_path: Path | None = None):
 
     # vmin/vmax를 설정하여 특정 에러 이상은 모두 진하게 표시되도록 하면 패턴 찾기가 쉽습니다.
     sns.heatmap(
-        pivot_table, 
-        annot=True, 
-        fmt=".2f", 
-        cmap='YlOrRd', 
+        pivot_table,
+        annot=True,
+        fmt=".2f",
+        cmap='YlOrRd',
         cbar_kws={'label': 'Mean Absolute Error (Å)'},
         linewidths=.5
     )
@@ -223,7 +223,7 @@ def save_advanced_reconstruction(
     # Selection: Top 3 Worst Cases + 3 Random Cases
     if worst_indices is not None and len(worst_indices) >= 3:
         target_indices = np.concatenate([
-            worst_indices[:3], 
+            worst_indices[:3],
             np.random.choice(len(preds), n_random, replace=False)
         ])
         labels = ["Worst #1", "Worst #2", "Worst #3", "Random A", "Random B", "Random C"]
@@ -311,7 +311,7 @@ def evaluate_pipeline(
     ckpt = torch.load(checkpoint_path, map_location=device)
     config_dict = ckpt.get("config", {})
     # Handle older checkpoint compatibility
-    model_args = config_dict.get("model_args", config_dict) 
+    model_args = config_dict.get("model_args", config_dict)
 
     # 2. Model Init
     model = XRRPhysicsModel(**model_args).to(device)
@@ -392,9 +392,9 @@ def main():
 
     # 2. Q-Vector 생성 (물리 모델 계산용)
     qs = np.linspace(
-        CONFIG["simulation"]["q_min"], 
-        CONFIG["simulation"]["q_max"], 
-        CONFIG["simulation"]["q_points"], 
+        CONFIG["simulation"]["q_min"],
+        CONFIG["simulation"]["q_max"],
+        CONFIG["simulation"]["q_points"],
     )
 
     # 3. Test DataLoader 준비
@@ -411,9 +411,9 @@ def main():
     )
 
     test_loader = DataLoader(
-        test_ds, 
-        batch_size=CONFIG["training"]["batch_size"], 
-        shuffle=False, 
+        test_ds,
+        batch_size=CONFIG["training"]["batch_size"],
+        shuffle=False,
         num_workers=CONFIG["training"]["num_workers"],
         pin_memory=torch.cuda.is_available()
     )

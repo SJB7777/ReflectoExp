@@ -1,8 +1,9 @@
-import sys
+import argparse
 import platform
 import subprocess
-import argparse
+import sys
 from pathlib import Path
+
 
 def get_venv_python() -> Path:
     """
@@ -17,7 +18,7 @@ def get_venv_python() -> Path:
         venv_python = base_path / ".venv" / "bin" / "python"
 
     if not venv_python.exists():
-        print(f"[Error] 가상환경 Python을 찾을 수 없습니다.")
+        print("[Error] 가상환경 Python을 찾을 수 없습니다.")
         print(f"  경로 확인: {venv_python}")
         sys.exit(1)
 
@@ -69,7 +70,7 @@ def run_main(target_folder: Path):
     try:
         # subprocess에는 Path 객체를 문자열로 변환(str)해서 넘기는 것이 안전합니다.
         subprocess.run(
-            [str(venv_python), "main.py"], 
+            [str(venv_python), "main.py"],
             cwd=target_folder,  # 작업 디렉토리를 해당 실험 폴더로 변경
             check=True
         )
