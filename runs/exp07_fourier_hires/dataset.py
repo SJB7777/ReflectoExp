@@ -4,10 +4,7 @@ import h5py
 import numpy as np
 import torch
 from augmentations import XRRAugmentations
-<<<<<<< HEAD
-=======
 from scipy.interpolate import interp1d
->>>>>>> b0d3c75701673a03fd014559260eecd1e7185489
 from torch.utils.data import Dataset
 
 

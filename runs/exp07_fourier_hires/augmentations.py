@@ -1,10 +1,7 @@
 import numpy as np
-<<<<<<< HEAD
-=======
 from scipy.ndimage import gaussian_filter1d
 
 from reflecto_exp.simulate.noise import apply_poisson_noise, get_background_noise
->>>>>>> b0d3c75701673a03fd014559260eecd1e7185489
 
 
 
