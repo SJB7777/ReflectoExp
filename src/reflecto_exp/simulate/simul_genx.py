@@ -151,6 +151,7 @@ class XRRSimulator:
             # 2. SiO2
             s_d = np.random.uniform(self.st_min, self.st_max)
             s_sig = np.random.uniform(self.sr_min, self.sr_max)
+            # TODO: sld uniform distribution 5 - 30
             s_sld = np.random.normal(self.sio2_sld_mean, 0.5)
             sio2_p = ParamSet(s_d, s_sig, s_sld)
 
