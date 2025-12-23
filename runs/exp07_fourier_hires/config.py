@@ -20,7 +20,7 @@ CONFIG = {
     },
     "simulation": {
         "wavelength": 1.54,
-        "n_samples": int(5e4),        # 기본 5만장 (Augment로 x50배 효과)
+        "n_samples": int(1e5),        # 기본 5만장 (Augment로 x50배 효과)
         "q_points": 2000,             # [수정] 500 -> 2000 (Nyquist 안전권 확보)
         "q_min": tth2q(0.05),         # 저각 정보 강화
         "q_max": tth2q(15.0),
@@ -45,7 +45,7 @@ CONFIG = {
 
         # [Point 3] 학습 볼륨 증대 (Online Augmentation)
         "augment": True,
-        "expand_factor": 50,          # Epoch당 데이터셋을 50번 재사용 (매번 다른 노이즈)
+        "expand_factor": 20,          # Epoch당 데이터셋을 50번 재사용 (매번 다른 노이즈)
         "aug_prob": 0.9,              # 90% 확률로 증강
         "intensity_scale": 0.25,      # I0 스케일링 오차 +/- 25%
         "q_shift_sigma": 0.004,       # q축 틀어짐 강화
