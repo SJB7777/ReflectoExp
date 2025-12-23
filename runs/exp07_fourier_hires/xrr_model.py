@@ -22,8 +22,13 @@ class FourierFeatureMapping(nn.Module):
 
 class XRRPhysicsModel(nn.Module):
     def __init__(self, q_len: int, input_channels: int = 2, output_dim: int = 3,
+<<<<<<< HEAD
                  n_channels: int = 64, depth: int = 5, mlp_hidden: int = 256,
                  dropout: float = 0.1, use_fourier: bool = True, fourier_scale: float = 10.0):
+=======
+                n_channels: int = 64, depth: int = 5, mlp_hidden: int = 256,
+                dropout: float = 0.1, use_fourier: bool = True, fourier_scale: float = 10.0):
+>>>>>>> b0d3c75701673a03fd014559260eecd1e7185489
         super().__init__()
         self.use_fourier = use_fourier
 

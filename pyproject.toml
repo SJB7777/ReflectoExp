@@ -91,3 +91,8 @@ ignore = ["B008"]
 [tool.ruff.lint.isort]
 known-first-party = ["reflectolearn"]
 combine-as-imports = true
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.3",
+]

@@ -1,46 +1,58 @@
 import numpy as np
+<<<<<<< HEAD
+=======
+from scipy.ndimage import gaussian_filter1d
 
-from reflecto_exp.simulate.noise import add_noise
+from reflecto_exp.simulate.noise import apply_poisson_noise, get_background_noise
+>>>>>>> b0d3c75701673a03fd014559260eecd1e7185489
+
 
 
 class XRRAugmentations:
-    """
-    Applies physics-based data augmentation to XRR signals.
-    """
     def __init__(
         self,
-        intensity_noise_scale: float = 0.1,  # +/- 10% scaling
-        q_shift_sigma: float = 0.002,        # Standard deviation for q-shift (1/A)
-        background_level: float = 1e-7,      # Random background noise floor
-        prob: float = 0.5                    # Probability of applying augmentation
+        intensity_noise_scale: float = 0.2,
+        bg_range: tuple[float, float] = (-8, -5),
+        res_sigma_range: tuple[float, float] = (0.0001, 0.005),
+        q_shift_sigma: float = 0.002,  # [추가] main.py와 동기화
+        delta_q: float = 0.0005,
+        prob: float = 0.9
     ):
-        self.intensity_scale = intensity_noise_scale
-        self.q_shift_sigma = q_shift_sigma
-        self.background_level = background_level
+        self.intensity_noise_scale = intensity_noise_scale
+        self.bg_range = bg_range
+        self.res_sigma_range = res_sigma_range
+        self.q_shift_sigma = q_shift_sigma # [추가]
+        self.delta_q = delta_q
         self.prob = prob
 
     def __call__(self, q: np.ndarray, R: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Apply augmentations.
-        Args:
-            q: q vector (1D numpy array)
-            R: Reflectivity vector (1D numpy array)
-        Returns:
-            Modified (q, R)
-        """
         if np.random.rand() > self.prob:
             return q, R
 
-        # 1. Intensity Scaling (Global scaling error)
-        # Simulates errors in I0 normalization
-        scale_factor = np.random.uniform(1.0 - self.intensity_scale, 1.0 + self.intensity_scale)
-        R_aug = R * scale_factor
+        R_aug = R.copy()
 
-        # 2. Q-Shifting (Alignment error)
-        shift = np.random.normal(0, self.q_shift_sigma)
-        q_shifted = q + shift
-        R_aug = np.interp(q, q_shifted, R_aug, left=R_aug[0], right=R_aug[-1])
+        # 1. Resolution Smearing
+        res_sigma_q = np.random.uniform(*self.res_sigma_range)
+        sigma_px = res_sigma_q / self.delta_q
+        R_aug = gaussian_filter1d(R_aug, sigma=sigma_px)
 
-        R_aug = add_noise(R_aug)
+        # 2. Background Noise
+        bg_level = np.random.uniform(*self.bg_range)
+        N = len(R_aug)
+        bg = get_background_noise(N, bg_level, bg_level + 0.5)
+        R_aug = R_aug + np.abs(bg)
+
+        # 3. Dynamic Poisson Noise
+        s_rand = pow(10, np.random.uniform(5, 8))
+        R_aug = apply_poisson_noise(R_aug, s=s_rand)
+
+        # 4. Global Scaling
+        scale = np.random.uniform(1-self.intensity_noise_scale, 1+self.intensity_noise_scale)
+        R_aug *= scale
+
+        # 5. Q-shift (Using the sigma from main.py)
+        if self.q_shift_sigma > 0:
+            q_shift = np.random.normal(0, self.q_shift_sigma)
+            R_aug = np.interp(q, q + q_shift, R_aug, left=R_aug[0], right=R_aug[-1])
 
         return q, R_aug
