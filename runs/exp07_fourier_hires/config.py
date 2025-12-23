@@ -35,7 +35,7 @@ CONFIG = {
     },
     "training": {
         "batch_size": 64,
-        "epochs": 100,
+        "epochs": 150,
         "lr": 2e-4,
         "weight_decay": 1e-4,
         "val_ratio": 0.1,
