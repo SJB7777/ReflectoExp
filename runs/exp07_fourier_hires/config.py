@@ -6,9 +6,9 @@ import numpy as np
 from reflecto_exp.physics_utils import tth2q
 
 CONFIG = {
-    "exp_name": "test",
-    # "base_dir": Path(r"D:\Members\IsaacYong\Data\XRR_AI\exp07"),
-    "base_dir": Path(r"C:\Warehouse\data\XRR_AI\exp07"),
+    "exp_name": "sio2_uniform",
+    "base_dir": Path(r"D:\Members\IsaacYong\Data\XRR_AI\exp07"),
+    # "base_dir": Path(r"C:\Warehouse\data\XRR_AI\exp07"),
 
     "param_ranges": {
         "thickness": (10.0, 1200.0),  # 1200A까지 커버 (고주파수 극한 테스트)
