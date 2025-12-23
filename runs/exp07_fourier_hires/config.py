@@ -1,19 +1,22 @@
 import json
 from pathlib import Path
+
 import numpy as np
+
 from reflecto_exp.physics_utils import tth2q
 
 CONFIG = {
-    "exp_name": "sample",
-    "base_dir": Path(r"D:\Members\IsaacYong\Data\XRR_AI\exp07"),
-    
+    "exp_name": "test",
+    # "base_dir": Path(r"D:\Members\IsaacYong\Data\XRR_AI\exp07"),
+    "base_dir": Path(r"C:\Warehouse\data\XRR_AI\exp07"),
+
     "param_ranges": {
         "thickness": (10.0, 1200.0),  # 1200A까지 커버 (고주파수 극한 테스트)
         "roughness": (0.0, 40.0),     # 매우 거친 표면까지
         "sld": (5.0, 100.0),          # 금속/세라믹 등 다양한 물질
         "sio2_thickness": (10.0, 30.0),
         "sio2_roughness": (1.0, 5.0),
-        "sio2_sld": 18.8,
+        "sio2_sld": (5.0, 22.0),
     },
     "simulation": {
         "wavelength": 1.54,

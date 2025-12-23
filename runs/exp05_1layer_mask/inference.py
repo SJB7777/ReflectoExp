@@ -1,13 +1,14 @@
 import json
-
 from pathlib import Path
+
 import numpy as np
 import torch
-
 from config import CONFIG
 from dataset import XRRPreprocessor
 from xrr_model import XRR1DRegressor
+
 from reflecto_exp.math_utils import powerspace  # [필수] powerspace 임포트
+
 
 class XRRInferenceEngine:
     def __init__(self, exp_dir=None):
@@ -25,7 +26,7 @@ class XRRInferenceEngine:
         self.config_file = exp_dir / "config.json"
 
         if self.config_file.exists():
-            with open(self.config_file, "r") as f:
+            with open(self.config_file) as f:
                 self.train_config = json.load(f)
             print(f"[Inference] Loaded training config from {self.config_file}")
         else:

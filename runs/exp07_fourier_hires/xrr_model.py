@@ -1,6 +1,7 @@
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
+
 
 class FourierFeatureMapping(nn.Module):
     """
@@ -16,16 +17,16 @@ class FourierFeatureMapping(nn.Module):
         if x.dim() == 2:
             x = x.unsqueeze(1)
         x_proj = x.transpose(1, 2) @ self.B
-        x_proj = x_proj.transpose(1, 2) * 2 * np.pi 
+        x_proj = x_proj.transpose(1, 2) * 2 * np.pi
         return torch.cat([torch.sin(x_proj), torch.cos(x_proj)], dim=1)
 
 class XRRPhysicsModel(nn.Module):
-    def __init__(self, q_len: int, input_channels: int = 2, output_dim: int = 3, 
-                 n_channels: int = 64, depth: int = 5, mlp_hidden: int = 256, 
+    def __init__(self, q_len: int, input_channels: int = 2, output_dim: int = 3,
+                 n_channels: int = 64, depth: int = 5, mlp_hidden: int = 256,
                  dropout: float = 0.1, use_fourier: bool = True, fourier_scale: float = 10.0):
         super().__init__()
         self.use_fourier = use_fourier
-        
+
         # Checkpoint 호환성을 위한 Config 저장
         self.config = {
             'q_len': q_len, 'input_channels': input_channels, 'output_dim': output_dim,

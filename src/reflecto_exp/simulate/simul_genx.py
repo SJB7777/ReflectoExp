@@ -118,7 +118,7 @@ class XRRSimulator:
             sld_range: tuple[float, float] = (5.0, 150.0),
             sio2_thick_range: tuple[float, float] = (10.0, 25.0),
             sio2_rough_range: tuple[float, float] = (2.0, 5.0),
-            sio2_sld_mean: float = 18.8,
+            sio2_sld_range: tuple[float, float] = (5, 22),
             has_noise: bool = False,
             ):
 
@@ -131,7 +131,7 @@ class XRRSimulator:
 
         self.st_min, self.st_max = sio2_thick_range
         self.sr_min, self.sr_max = sio2_rough_range
-        self.sio2_sld_mean = sio2_sld_mean
+        self.ss_min, self.ss_max = sio2_sld_range
 
         self.has_noise = has_noise
 
@@ -151,7 +151,7 @@ class XRRSimulator:
             # 2. SiO2
             s_d = np.random.uniform(self.st_min, self.st_max)
             s_sig = np.random.uniform(self.sr_min, self.sr_max)
-            s_sld = np.random.normal(self.sio2_sld_mean, 0.5)
+            s_sld = np.random.uniform(self.ss_min, self.ss_max)
             sio2_p = ParamSet(s_d, s_sig, s_sld)
 
             # 3. Simulate

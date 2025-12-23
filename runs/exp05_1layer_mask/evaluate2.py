@@ -12,6 +12,7 @@ from dataset import XRR1LayerDataset
 from torch.utils.data import DataLoader
 from tqdm import tqdm  # 진행상황 표시용
 from xrr_model import XRR1DRegressor
+
 from reflecto_exp.math_utils import powerspace
 from reflecto_exp.simulate.simul_genx import ParamSet, param2refl
 
@@ -46,7 +47,7 @@ def calculate_all_foms(qs, preds, targets):
     """
     foms = []
     print("Calculating FOM for all test samples (Physics Simulation)...")
-    
+
     # 배치 처리가 가능하다면 더 빠르겠지만, 안전하게 루프로 처리
     for i in tqdm(range(len(preds))):
         p_pred = ParamSet(preds[i][0], preds[i][1], preds[i][2])
@@ -80,7 +81,7 @@ def generate_results_df(preds, targets, errors, foms, param_names):
         data[f"{clean}_True"] = targets[:, i]
         data[f"{clean}_Pred"] = preds[:, i]
         data[f"{clean}_Error"] = errors[:, i]
-    
+
     # FOM 컬럼 추가
     data["FOM_Log"] = foms
     return pd.DataFrame(data)
@@ -93,21 +94,21 @@ def save_fom_report(foms: np.ndarray, save_path: Path):
     FOM 분포를 히스토그램과 통계로 보여주는 보고서
     """
     if not save_path: return
-    
+
     fig = plt.figure(figsize=(10, 6), layout='constrained')
     gs = gridspec.GridSpec(1, 2, figure=fig, width_ratios=[1.5, 1])
-    
+
     # 1. Histogram & KDE
     ax1 = fig.add_subplot(gs[0])
     # 이상치 제외하고 보여주기 위해 99% quantile까지만 자름 (그래프 가독성)
     cut_off = np.percentile(foms, 99)
     foms_view = foms[foms <= cut_off]
-    
+
     ax1.hist(foms_view, bins=30, color='royalblue', alpha=0.7, density=True, label='Density')
     ax1.set_title("FOM Distribution (Log Scale Error)", fontweight='bold')
     ax1.set_xlabel("FOM Value (Lower is Better)")
     ax1.set_ylabel("Density")
-    
+
     # 평균, 중위수 표시
     mean_val = np.mean(foms)
     median_val = np.median(foms)
@@ -118,7 +119,7 @@ def save_fom_report(foms: np.ndarray, save_path: Path):
     # 2. Summary Stats Text Box
     ax2 = fig.add_subplot(gs[1])
     ax2.axis('off')
-    
+
     stats_text = (
         f"DATASET SUMMARY\n"
         f"-----------------------\n"
@@ -133,8 +134,8 @@ def save_fom_report(foms: np.ndarray, save_path: Path):
         f"  - Top 90% < {np.percentile(foms, 90):.4f}\n"
         f"  - Top 99% < {np.percentile(foms, 99):.4f}"
     )
-    
-    ax2.text(0.1, 0.5, stats_text, fontsize=13, family='monospace', 
+
+    ax2.text(0.1, 0.5, stats_text, fontsize=13, family='monospace',
              verticalalignment='center', transform=ax2.transAxes,
              bbox=dict(boxstyle='round,pad=1', facecolor='#f8f9fa', edgecolor='#dee2e6'))
 
@@ -150,44 +151,44 @@ def save_curve_comparison(qs, preds, targets, foms, save_path: Path):
 
     # FOM 기준으로 Best/Worst 정렬 (MSE 대신 FOM 사용이 더 설득력 있음)
     sorted_indices = np.argsort(foms)
-    
+
     indices = np.concatenate([
         sorted_indices[:2], # Best FOM
         np.random.choice(sorted_indices[2:-2], 2, replace=False), # Random
         sorted_indices[-2:] # Worst FOM
     ])
-    
+
     titles = ["Best Case 1", "Best Case 2", "Random Case 1", "Random Case 2", "Worst Case 1", "Worst Case 2"]
-    
+
     fig, axes = plt.subplots(2, 3, figsize=(18, 10), layout='constrained')
     axes = axes.flatten()
-    
+
     for i, idx in enumerate(indices):
         ax = axes[i]
-        
+
         t_true = targets[idx]
         t_pred = preds[idx]
         fom_val = foms[idx] # 해당 샘플의 FOM
-        
+
         p_true = ParamSet(t_true[0], t_true[1], t_true[2])
         p_pred = ParamSet(t_pred[0], t_pred[1], t_pred[2])
-        
+
         curve_true = param2refl(qs, [p_true]).flatten()
         curve_pred = param2refl(qs, [p_pred]).flatten()
-        
+
         ax.semilogy(qs, curve_true, 'k-', lw=3, alpha=0.6, label='Ground Truth')
         ax.semilogy(qs, curve_pred, 'r--', lw=2, label='AI Prediction')
-        
+
         # 제목에 FOM 표시 (핵심)
         title_str = f"{titles[i]}\nFOM: {fom_val:.5f} | Thick Err: {abs(t_true[0]-t_pred[0]):.1f}Å"
-        
+
         # FOM이 좋으면(낮으면) 초록색, 나쁘면 빨간색 텍스트
         color = 'darkgreen' if fom_val < 0.05 else 'black'
         if i >= 4: color = 'firebrick' # Worst cases
-            
+
         ax.set_title(title_str, fontsize=11, fontweight='bold', color=color)
         ax.set_xlabel("Q ($Å^{-1}$)")
-        
+
         if i % 3 == 0: ax.set_ylabel("Reflectivity (log)")
         if i == 0: ax.legend(frameon=True)
         ax.grid(True, which='both', alpha=0.3)
@@ -204,14 +205,14 @@ def save_investor_report_plots(df: pd.DataFrame, param_names: list[str], save_pa
     n_params = len(param_names)
     fig = plt.figure(figsize=(18, 12), layout='constrained')
     gs = gridspec.GridSpec(3, n_params, figure=fig)
-    colors = ['#1f77b4', '#ff7f0e', '#2ca02c'] 
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
 
     for i, name in enumerate(param_names):
         clean = name.split(' (')[0]
         y_true = df[f"{clean}_True"].values
         y_pred = df[f"{clean}_Pred"].values
         err = df[f"{clean}_Error"].values
-        
+
         # Hexbin
         ax1 = fig.add_subplot(gs[0, i])
         min_v = min(y_true.min(), y_pred.min())
@@ -221,7 +222,7 @@ def save_investor_report_plots(df: pd.DataFrame, param_names: list[str], save_pa
         corr = np.corrcoef(y_true, y_pred)[0, 1]
         ax1.text(0.05, 0.95, f'$R^2 = {corr**2:.3f}$', transform=ax1.transAxes, bbox=dict(boxstyle='round', facecolor='white', alpha=0.9))
         ax1.set_title(f"{clean}: Pred vs True", fontweight='bold')
-        
+
         # Residuals
         ax2 = fig.add_subplot(gs[1, i])
         ax2.scatter(y_true, err, alpha=0.4, s=15, color=colors[i % len(colors)], edgecolor='w', linewidth=0.5)
@@ -230,7 +231,7 @@ def save_investor_report_plots(df: pd.DataFrame, param_names: list[str], save_pa
         ax2.axhline(1.96 * std_err, color='red', linestyle=':', alpha=0.6)
         ax2.axhline(-1.96 * std_err, color='red', linestyle=':', alpha=0.6)
         ax2.set_title(f"{clean}: Residuals", fontweight='bold')
-        
+
         # CDF
         ax3 = fig.add_subplot(gs[2, i])
         sorted_abs_err = np.sort(np.abs(err))

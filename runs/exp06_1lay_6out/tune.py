@@ -1,18 +1,16 @@
+import gc
 import json
 from pathlib import Path
-import gc
 
-from tqdm import tqdm
+import optuna
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
-
-import optuna
-from optuna.trial import TrialState
-
 from config import CONFIG
 from dataset import XRR1LayerDataset
+from optuna.trial import TrialState
+from torch.utils.data import DataLoader
+from tqdm import tqdm
 from xrr_model import XRR1DRegressor
 
 # ---------------------------------------------------------

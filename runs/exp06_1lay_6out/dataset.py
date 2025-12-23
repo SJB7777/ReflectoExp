@@ -7,6 +7,7 @@ from torch.utils.data import Dataset
 
 from reflecto_exp.simulate.noise import add_noise
 
+
 class XRRPreprocessor:
     """
     Shared class for XRR data preprocessing and inverse transformation.

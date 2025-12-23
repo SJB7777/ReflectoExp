@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 
 from reflecto_exp.physics_utils import tth2q
-from reflecto_exp.simulate.simulator import XRRSimulator
+from reflecto_exp.simulate.simul_refnx import XRRSimulator
 
 
 def generate_1layer_data(config: dict, h5_file: Path | str):

@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import numpy as np
 import simulate
 import torch
@@ -33,14 +34,14 @@ def get_dataloaders(qs, config, h5_file, stats_file):
         "q_shift_sigma": config["training"]["q_shift_sigma"],
         "intensity_scale": config["training"]["intensity_scale"]
     }
-    
+
     loaders = []
     for mode in ["train", "val", "test"]:
         # Only apply augment to train (handled inside Dataset logic based on mode='train')
-        ds = XRR1LayerDataset(**common_args, mode=mode, 
-                            val_ratio=config["training"]["val_ratio"], 
+        ds = XRR1LayerDataset(**common_args, mode=mode,
+                            val_ratio=config["training"]["val_ratio"],
                             test_ratio=config["training"]["test_ratio"])
-        loaders.append(DataLoader(ds, batch_size=config["training"]["batch_size"], 
+        loaders.append(DataLoader(ds, batch_size=config["training"]["batch_size"],
                         shuffle=(mode=="train"), num_workers=config["training"]["num_workers"],
                         pin_memory=torch.cuda.is_available()))
     return loaders
@@ -48,23 +49,23 @@ def get_dataloaders(qs, config, h5_file, stats_file):
 def main():
     print("=== EXP07: High-Res Fourier Physics Network ===")
     set_seed(42)
-    
+
     exp_dir = Path(CONFIG["base_dir"]) / CONFIG["exp_name"]
     exp_dir.mkdir(parents=True, exist_ok=True)
-    
+
     h5_file = exp_dir / "dataset.h5"
     stats_file = exp_dir / "stats.pt"
     checkpoint_file = exp_dir / "best.pt"
     qs_file = exp_dir / "qs.npy"
-    
+
     qs = np.linspace(CONFIG["simulation"]["q_min"], CONFIG["simulation"]["q_max"],
                     CONFIG["simulation"]["q_points"])
     np.save(qs_file, qs)
     save_config(CONFIG, exp_dir / "config.json")
-    
+
     ensure_data_exists(qs, CONFIG, h5_file)
     train_loader, val_loader, test_loader = get_dataloaders(qs, CONFIG, h5_file, stats_file)
-    
+
     print("Initializing XRRPhysicsModel...")
     # [FIX] Fourier Config Injection
     model = XRRPhysicsModel(
@@ -78,7 +79,7 @@ def main():
         fourier_scale=CONFIG["model"]["fourier_scale"]
     )
 
-    trainer = Trainer(model, train_loader, val_loader, exp_dir, 
+    trainer = Trainer(model, train_loader, val_loader, exp_dir,
                     lr=CONFIG["training"]["lr"], weight_decay=CONFIG["training"]["weight_decay"],
                     patience=CONFIG["training"]["patience"])
 

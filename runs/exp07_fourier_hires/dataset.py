@@ -3,8 +3,8 @@ from pathlib import Path
 import h5py
 import numpy as np
 import torch
-from torch.utils.data import Dataset
 from augmentations import XRRAugmentations
+from torch.utils.data import Dataset
 
 
 class XRRPreprocessor:

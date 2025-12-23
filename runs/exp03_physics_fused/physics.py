@@ -231,7 +231,7 @@ class PhysicsLayer(nn.Module):
 
 if __name__ == '__main__':
     from reflecto_exp.physics_utils import tth2q
-    from reflecto_exp.simulate.simulator import XRRSimulator
+    from reflecto_exp.simulate.simul_refnx import XRRSimulator
 
     wavelen: float = 1.54  # (nm)
     tth_min: float = 0.2   # degree
