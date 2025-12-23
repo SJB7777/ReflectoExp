@@ -4,7 +4,6 @@ from scipy.ndimage import gaussian_filter1d
 from reflecto_exp.simulate.noise import apply_poisson_noise, get_background_noise
 
 
-
 class XRRAugmentations:
     def __init__(
         self,

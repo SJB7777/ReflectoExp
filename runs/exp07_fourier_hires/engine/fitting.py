@@ -1,11 +1,13 @@
-import numpy as np
 import time
 from dataclasses import dataclass
+
+import numpy as np
+from engine.script_builder import GenXScriptBuilder
 from genx import fom_funcs
 from genx.data import DataList, DataSet
 from genx.model import Model
 from genx.parameters import Parameters
-from engine.script_builder import GenXScriptBuilder
+
 
 @dataclass
 class XRRConfig:
@@ -13,9 +15,9 @@ class XRRConfig:
     wavelength: float = 1.5406
     beam_width: float = 0.1
     sample_len_init: float = 10.0
-    
+
     steps_instrument: int = 300
-    steps_thickness: int = 800 
+    steps_thickness: int = 800
     steps_structure: int = 1000
     steps_fine: int = 1200
     pop_size: int = 40
@@ -35,7 +37,7 @@ class GenXFitter:
         ds.x_raw, ds.y_raw = self.q, self.R
         ds.error_raw = np.maximum(self.R * 0.1, 1e-9)
         ds.run_command()
-        
+
         model = Model()
         model.data = DataList([ds])
 
@@ -73,9 +75,9 @@ class GenXFitter:
         add_par("v.set_f_sld", sld_ai, max(5.0, sld_ai*0.9), min(150.0, sld_ai*1.1))
 
         # [2] Substrate Oxide (SiO2): 저각 위상 조절의 핵심
-        add_par("v.set_s_d", 15.0, 0.01, 55.0) 
+        add_par("v.set_s_d", 15.0, 0.01, 55.0)
         add_par("v.set_s_sig", 3.0, 0.5, 15.0)
-        add_par("v.set_s_sld", 16, 5.0, 20.0) 
+        add_par("v.set_s_sld", 16, 5.0, 20.0)
 
         # [3] Instrument: I0 범위를 넓혀 강도 보상 허용
         add_par("v.set_i0", 1.0, 0.1, 20.0)
@@ -83,7 +85,7 @@ class GenXFitter:
 
         # [교정] L 파라미터가 40mm를 넘으면 1인치 시료에서 오차가 발생함
         # 실제 시료 크기가 작다면 max_v를 25.0 정도로 줄이는 것이 저각에 유리합니다.
-        add_par("v.set_s_len", cfg.sample_len_init, 5.0, 45.0) 
+        add_par("v.set_s_len", cfg.sample_len_init, 5.0, 45.0)
 
         model.parameters = pars
 
@@ -94,7 +96,7 @@ class GenXFitter:
 
         # [Step 1] INITIAL ANCHORING: I0만 맞추기
         # start = time.time()
-        # model.set_fom_func(fom_funcs.R1) 
+        # model.set_fom_func(fom_funcs.R1)
         # self._set_active_params(["set_i0", "set_ibkg"])
         # model.bumps_update_parameters(model.bumps_fit(method="de", steps=200, pop=15))
         # if verbose: self._print_status("ANCHORING", time.time() - start)
@@ -118,8 +120,8 @@ class GenXFitter:
         start = time.time()
         self._set_active_params(["set_f_d", "set_f_sld", "set_f_sig", "set_s_d", "set_s_sld", "set_i0", "set_ibkg", "set_s_len"])
         model.bumps_update_parameters(model.bumps_fit(method="de", steps=600, pop=cfg.pop_size))
-        
-        if verbose: 
+
+        if verbose:
             self._print_status("FINAL", time.time() - start)
             print("="*185 + "\n")
 
