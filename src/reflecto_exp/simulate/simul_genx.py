@@ -7,7 +7,7 @@ import numpy as np
 from genx.models.spec_nx import Layer, Sample, Specular, Stack
 from tqdm import tqdm
 
-from reflecto_exp.consts_genx import AIR, SURFACE_SIO2, XRAY_TUBE
+from reflecto_exp.consts_genx import AIR, SUBSTRATE_SI, SURFACE_SIO2, XRAY_TUBE
 from reflecto_exp.physics_utils import r_e
 from reflecto_exp.simulate.noise import add_noise
 
@@ -99,10 +99,12 @@ def calc_refl(sample: Sample, qs: np.ndarray) -> np.ndarray:
     return reflectivity
 
 
-def param2refl(qs: np.ndarray, film_params: list[ParamSet], sio2_param: ParamSet | None = None) -> np.ndarray:
+def param2refl(qs: np.ndarray, film_params: list[ParamSet], sio2_param: ParamSet | None = None, sub_param: ParamSet | None = None) -> np.ndarray:
     if sio2_param is None:
         sio2_param = ParamSet.from_genx_layer(SURFACE_SIO2)
-    sample = build_sample(film_params, sio2_param)
+    if sub_param is None:
+        sub_param = ParamSet.from_genx_layer(SUBSTRATE_SI)
+    sample = build_sample(film_params, sio2_param, sub_param)
     return calc_refl(sample, qs)
 
 
@@ -119,6 +121,7 @@ class XRRSimulator:
             sio2_thick_range: tuple[float, float] = (10.0, 25.0),
             sio2_rough_range: tuple[float, float] = (2.0, 5.0),
             sio2_sld_range: tuple[float, float] = (5, 22),
+            sub_rough_range: tuple[float, float] = (0.0, 5.0),
             has_noise: bool = False,
             ):
 
@@ -132,6 +135,8 @@ class XRRSimulator:
         self.st_min, self.st_max = sio2_thick_range
         self.sr_min, self.sr_max = sio2_rough_range
         self.ss_min, self.ss_max = sio2_sld_range
+
+        self.sub_r_min, self.sub_r_max = sub_rough_range
 
         self.has_noise = has_noise
 
@@ -154,9 +159,12 @@ class XRRSimulator:
             s_sld = np.random.uniform(self.ss_min, self.ss_max)
             sio2_p = ParamSet(s_d, s_sig, s_sld)
 
+            sub_sig = np.random.uniform(self.sub_r_min, self.sub_r_max)
+            sub_param = ParamSet.from_genx_layer(SUBSTRATE_SI)
+            sub_param.roughness = sub_sig
             # 3. Simulate
             try:
-                refl = param2refl(self.qs, film_params, sio2_p)
+                refl = param2refl(self.qs, film_params, sio2_p, sub_param)
             except RuntimeError as e:
                 print(f"[Simulation Error] Skipping sample: {e}")
                 raise e

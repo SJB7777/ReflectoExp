@@ -26,7 +26,7 @@ class XRRPhysicsModel(nn.Module):
                 dropout: float = 0.1, use_fourier: bool = True, fourier_scale: float = 10.0):
         super().__init__()
         self.use_fourier = use_fourier
-
+        inplace: bool = True  # False while debugging
         # Checkpoint 호환성을 위한 Config 저장
         self.config = {
             'q_len': q_len, 'input_channels': input_channels, 'output_dim': output_dim,
@@ -45,7 +45,7 @@ class XRRPhysicsModel(nn.Module):
             layers.append(nn.Sequential(
                 nn.Conv1d(curr_dim, out_dim, kernel_size=7, padding=3, bias=False),
                 nn.BatchNorm1d(out_dim),
-                nn.LeakyReLU(0.2, inplace=True),
+                nn.LeakyReLU(0.2, inplace=inplace),
                 nn.Dropout1d(dropout),
                 nn.MaxPool1d(kernel_size=2)
             ))
@@ -55,10 +55,10 @@ class XRRPhysicsModel(nn.Module):
         self.global_pool = nn.AdaptiveAvgPool1d(1)
         self.regressor = nn.Sequential(
             nn.Linear(curr_dim, mlp_hidden),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.LeakyReLU(0.2, inplace=inplace),
             nn.Dropout(dropout),
             nn.Linear(mlp_hidden, mlp_hidden // 2),
-            nn.LeakyReLU(0.2, inplace=True),
+            nn.LeakyReLU(0.2, inplace=inplace),
             nn.Linear(mlp_hidden // 2, output_dim)
         )
         self._init_weights()

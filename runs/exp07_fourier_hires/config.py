@@ -6,9 +6,10 @@ import numpy as np
 from reflecto_exp.physics_utils import tth2q
 
 CONFIG = {
-    "exp_name": "sio2_uniform",
-    "base_dir": Path(r"D:\Members\IsaacYong\Data\XRR_AI\exp07"),
+    "exp_name": "sub_rough_variation",
+    # "base_dir": Path(r"D:\Members\IsaacYong\Data\XRR_AI\exp07"),
     # "base_dir": Path(r"C:\Warehouse\data\XRR_AI\exp07"),
+    "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\exp07"),
 
     "param_ranges": {
         "thickness": (10.0, 1200.0),

@@ -58,6 +58,76 @@ def get_dataloaders(qs, config, h5_file, stats_file):
             drop_last=(mode=="train") # Batch norm 안정성
         ))
     return loaders
+
+
+def register_nan_hooks(model):
+    """
+    모델의 모든 레이어에 NaN/Inf 감지 훅을 설치합니다.
+    문제가 발생하면 즉시 레이어 이름과 값을 출력하고 프로그램을 멈춥니다.
+    """
+    def forward_hook(module, input, output):
+        if isinstance(output, torch.Tensor):
+            if torch.isnan(output).any():
+                print(f"🚨 [NaN Detected] Forward Pass - Layer: {module}")
+                raise RuntimeError(f"NaN found in output of {module}")
+            if torch.isinf(output).any():
+                print(f"⚠️ [Inf Detected] Forward Pass - Layer: {module}")
+                # Inf는 즉시 에러는 아니지만 NaN의 전조증상임
+                print(f"   - Max val: {output.max().item()}, Min val: {output.min().item()}")
+
+    def backward_hook(module, grad_input, grad_output):
+        # grad_output: 이 레이어에서 나가는 그라디언트
+        if grad_output is not None:
+            for i, grad in enumerate(grad_output):
+                if isinstance(grad, torch.Tensor):
+                    if torch.isnan(grad).any():
+                        print(f"🚨 [NaN Detected] Backward Pass (Gradient) - Layer: {module}")
+                        raise RuntimeError(f"NaN found in gradient of {module}")
+                    if torch.isinf(grad).any():
+                        print(f"⚠️ [Inf Detected] Backward Pass (Gradient) - Layer: {module}")
+
+    print("🔎 Installing NaN hooks on all layers...")
+    for name, module in model.named_modules():
+        # 컨테이너(Sequential 등)가 아닌 실제 연산 레이어에만 등록
+        if len(list(module.children())) == 0: 
+            module.register_forward_hook(forward_hook)
+            module.register_full_backward_hook(backward_hook)
+
+def register_debug_hooks(model):
+    print("🕵️‍♀️ Installing Debug Hooks (Input/Weight Inspector)...")
+
+    def forward_hook(module, input, output):
+        # input은 튜플로 들어옵니다 (x, )
+        x = input[0]
+
+        # 1. 입력 데이터 검사
+        if torch.isnan(x).any() or torch.isinf(x).any():
+            print(f"\n🚨 [CRITICAL] Input is dirty BEFORE entering {module}")
+            print(f"   - Input min: {x.min().item()}, max: {x.max().item()}")
+            print(f"   - Input NaNs: {torch.isnan(x).sum().item()}")
+            raise RuntimeError(f"Bad Input at {module}")
+
+        # 2. 가중치(Weights) 검사 (Conv/Linear 등)
+        if hasattr(module, 'weight') and module.weight is not None:
+            if torch.isnan(module.weight).any() or torch.isinf(module.weight).any():
+                print(f"\n💀 [CRITICAL] Weights are ALREADY broken at {module}")
+                print(f"   - Weight min: {module.weight.min().item()}, max: {module.weight.max().item()}")
+                raise RuntimeError(f"Broken Weights at {module}")
+
+        # 3. 출력 결과 검사 (여기가 터지면 연산 중 폭발)
+        if isinstance(output, torch.Tensor):
+            if torch.isnan(output).any() or torch.isinf(output).any():
+                print(f"\n💥 [CRITICAL] Output exploded AFTER {module}")
+                print(f"   - Input stats: min={x.min().item():.2e}, max={x.max().item():.2e}")
+                if hasattr(module, 'weight'):
+                    print(f"   - Weight stats: min={module.weight.min().item():.2e}, max={module.weight.max().item():.2e}")
+                raise RuntimeError(f"Explosion at {module}")
+
+    for name, module in model.named_modules():
+        # 컨테이너가 아닌 실제 연산 레이어에만 훅 등록
+        if len(list(module.children())) == 0:
+            module.register_forward_hook(forward_hook)
+
 def main():
     print("🚀 EXP07 Launching: Physics-Informed Fourier Network")
     set_seed(42)
@@ -93,6 +163,10 @@ def main():
         use_fourier=m_cfg["use_fourier"],
         fourier_scale=m_cfg["fourier_scale"]
     )
+
+    # Debug mode
+    register_debug_hooks(model)
+
     # 5. Trainer 실행
     trainer = Trainer(
         model, train_loader, val_loader, exp_dir,
@@ -117,6 +191,7 @@ def main():
             report_csv_path=exp_dir / "evaluation_results.csv",
             report_history_path=exp_dir / "training_history.png"
         )
+
 
 if __name__ == "__main__":
     main()

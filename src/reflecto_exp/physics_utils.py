@@ -3,7 +3,7 @@ from typing import Final, overload
 import numpy as np
 from numpy.typing import NDArray
 
-r_e: Final[float] = 2.8179403227e-5
+r_e: Final[float] = 2.8179403227e-5  # AA
 
 @overload
 def tth2q(tth: float, wavelen: float = 1.54) -> float: ...

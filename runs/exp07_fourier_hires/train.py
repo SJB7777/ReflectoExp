@@ -58,8 +58,8 @@ class Trainer:
         self.history = {"train": [], "val": [], "lr": []}
 
         # Mixed Precision Training (성능 및 속도 향상)
-        self.scaler = torch.amp.GradScaler('cuda') if self.device.type == 'cuda' else None
-
+        # self.scaler = torch.amp.GradScaler('cuda') if self.device.type == 'cuda' else None
+        self.scaler = None
         print(f"🚀 Trainer initialized on {self.device}")
         print(f"   - Augmentation: {'Enabled' if getattr(train_loader.dataset, 'augment', False) else 'Disabled'}")
 
@@ -68,9 +68,20 @@ class Trainer:
         running_loss = 0.0
         pbar = tqdm(self.train_loader, desc=f"Epoch {epoch}/{total_epochs} [Train]", leave=False)
 
+        # Debug mode
+        # torch.autograd.set_detect_anomaly(True)
+
         for inputs, targets in pbar:
             inputs = inputs.to(self.device)
             targets = targets.to(self.device)
+
+            # # Debug mode
+            # if torch.isnan(inputs).any() or torch.isinf(inputs).any():
+            #     print("🚨 [FATAL] Input data contains NaN or Inf!")
+            #     continue
+            # if torch.isnan(targets).any() or torch.isinf(targets).any():
+            #     print("🚨 [FATAL] Target data contains NaN or Inf!")
+            #     continue
 
             self.optimizer.zero_grad(set_to_none=True)
 
