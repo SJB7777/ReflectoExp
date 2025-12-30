@@ -6,10 +6,10 @@ import numpy as np
 from reflecto_exp.physics_utils import tth2q
 
 CONFIG = {
-    "exp_name": "sub_rough_variation",
-    # "base_dir": Path(r"D:\Members\IsaacYong\Data\XRR_AI\exp07"),
-    # "base_dir": Path(r"C:\Warehouse\data\XRR_AI\exp07"),
+    "exp_name": "1230",
     "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\exp07"),
+    # "base_dir": Path(r"C:\Warehouse\data\XRR_AI\exp07"),
+    # "base_dir": Path(r"G:\My Drive\Data\simulated"),
 
     "param_ranges": {
         "thickness": (10.0, 1200.0),
@@ -21,7 +21,7 @@ CONFIG = {
     },
     "simulation": {
         "wavelength": 1.54,
-        "n_samples": int(1e5),
+        "n_samples": int(5e4),
         "q_points": 2000,
         "q_min": tth2q(0.05),
         "q_max": tth2q(15.0),
@@ -41,11 +41,11 @@ CONFIG = {
         "weight_decay": 1e-4,
         "val_ratio": 0.1,
         "test_ratio": 0.1,
-        "patience": 20,
+        "patience": 50,
         "num_workers": 4,
 
         "augment": True,
-        "expand_factor": 20,
+        "expand_factor": 50,
         "aug_prob": 0.9,
         "intensity_scale": 0.25,
         "q_shift_sigma": 0.004,
@@ -72,6 +72,7 @@ def save_config(config: dict, file: Path | str):
     save_path.parent.mkdir(parents=True, exist_ok=True)
     with open(save_path, "w", encoding="utf-8") as f:
         json.dump(_to_serializable(config), f, indent=4, ensure_ascii=False)
+
 
 if __name__ == "__main__":
     from pprint import pprint

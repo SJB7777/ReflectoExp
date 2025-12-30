@@ -207,7 +207,7 @@ class XRRSimulator:
 
 
 def main():
-    # Test Execution
+
     import matplotlib.pyplot as plt
 
     qs = np.linspace(0.0, 0.5, 200)
