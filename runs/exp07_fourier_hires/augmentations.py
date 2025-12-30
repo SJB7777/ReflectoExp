@@ -11,7 +11,7 @@ class XRRAugmentations:
         res_sigma_range: tuple[float, float] = (0.0001, 0.005),
         q_shift_sigma: float = 0.002,
         delta_q: float = 0.0005,
-        prob: float = 0.9,
+        prob: float = 0.95,
         beam_width_range: tuple = (0.005, 0.015),
         sample_len_range: tuple = (5, 30.0),
         do_footprint: bool = True
