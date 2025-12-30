@@ -10,7 +10,8 @@ XRAY_TUBE: Final[Instrument] = Instrument(
     Ibkg=1e-10,
     res=0.0001,
     restype=ResType.fast_conv,
-    footype=FootType.gauss
+    footype=FootType.none,
+    beamw=0.0
 )
 
 AIR: Final[Layer] = Layer(
