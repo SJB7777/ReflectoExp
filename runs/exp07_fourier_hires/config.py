@@ -7,9 +7,7 @@ from reflecto_exp.physics_utils import tth2q
 
 CONFIG = {
     "exp_name": "1230",
-    "base_dir": Path(r"D:\03_Resources\Data\XRR_AI\exp07"),
-    # "base_dir": Path(r"C:\Warehouse\data\XRR_AI\exp07"),
-    # "base_dir": Path(r"G:\My Drive\Data\simulated"),
+    "base_dir": Path(r"C:\WorkSpace\05_Resources\Data\XRR_AI\exp07"),
 
     "param_ranges": {
         "thickness": (10.0, 1200.0),
