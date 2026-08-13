@@ -274,6 +274,12 @@ def main():
     parser.add_argument("--baseline-epochs", type=int, default=None,
                         help="기준 variant 기준 epoch 수. 이 값으로 총 step 예산을 정하고 "
                              "나머지 variant는 같은 step 수에 맞춘다 (기본: config의 epochs)")
+    parser.add_argument("--budget-steps", type=int, default=None,
+                        help="총 optimizer step 예산을 직접 지정 (--baseline-epochs보다 우선)")
+    parser.add_argument("--expand-factor", type=int, default=None,
+                        help="augmented variant의 expand_factor 덮어쓰기. 학습 내용이 아니라 "
+                             "epoch 경계(=val/checkpoint 주기)만 바꾼다. 낮추면 같은 step 예산에서 "
+                             "학습곡선 해상도가 올라간다")
     parser.add_argument("--budget-mode", choices=["steps", "epochs"], default="steps",
                         help="steps: 기준 variant의 총 optimizer step 수에 맞춰 epoch 자동 조정 (기본). "
                              "epochs: config의 epochs를 그대로 사용")
@@ -289,6 +295,13 @@ def main():
         raise SystemExit(f"Unknown variant(s): {unknown}. Available: {list(VARIANTS)}")
 
     cfgs = {name: deep_merge(CONFIG, VARIANTS[name]) for name in names}
+
+    if args.expand_factor is not None:
+        for cfg in cfgs.values():
+            # augmentation을 쓰지 않는 variant는 expand가 무의미하므로 1로 고정된 채 둔다
+            if cfg["training"]["augment"]:
+                cfg["training"]["expand_factor"] = args.expand_factor
+        print(f"[Override] expand_factor = {args.expand_factor} (augmented variants only)")
 
     root_dir = Path(CONFIG["base_dir"]) / CONFIG["exp_name"]
     root_dir.mkdir(parents=True, exist_ok=True)
@@ -310,18 +323,30 @@ def main():
     budget_steps = None
     baseline_spe = None
     if args.budget_mode == "steps" and args.epochs is None:
-        base_cfg = deep_merge(CONFIG, VARIANTS[args.baseline])
+        # expand_factor 덮어쓰기가 적용된 config를 그대로 사용해야 예산이 어긋나지 않음
+        base_cfg = cfgs.get(args.baseline)
+        if base_cfg is None:
+            base_cfg = deep_merge(CONFIG, VARIANTS[args.baseline])
+            if args.expand_factor is not None and base_cfg["training"]["augment"]:
+                base_cfg["training"]["expand_factor"] = args.expand_factor
+
         base_stats = root_dir / "ablation" / args.baseline / "stats.pt"
         base_stats.parent.mkdir(parents=True, exist_ok=True)
         base_loader, _, _ = make_loaders(
             build_qs(base_cfg["simulation"]), base_cfg, h5_file, base_stats,
         )
         baseline_spe = steps_per_epoch(base_loader)
-        base_epochs = args.baseline_epochs or base_cfg["training"]["epochs"]
-        budget_steps = base_epochs * baseline_spe
-        print(f"\n[Budget] baseline={args.baseline}, {base_epochs} epochs × "
-              f"{baseline_spe:,} steps = {budget_steps:,} steps "
-              f"(모든 variant를 이 step 수에 맞춤)")
+
+        if args.budget_steps is not None:
+            budget_steps = args.budget_steps
+            print(f"\n[Budget] 직접 지정 = {budget_steps:,} steps "
+                  f"(baseline={args.baseline}, {baseline_spe:,} steps/epoch)")
+        else:
+            base_epochs = args.baseline_epochs or base_cfg["training"]["epochs"]
+            budget_steps = base_epochs * baseline_spe
+            print(f"\n[Budget] baseline={args.baseline}, {base_epochs} epochs × "
+                  f"{baseline_spe:,} steps = {budget_steps:,} steps "
+                  f"(모든 variant를 이 step 수에 맞춤)")
     elif args.epochs is not None:
         print(f"\n⚠️  --epochs {args.epochs}: variant마다 epoch당 step 수가 다르므로 "
               f"공정 비교가 성립하지 않음 (스모크 테스트 전용)")
