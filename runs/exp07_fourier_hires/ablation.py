@@ -141,6 +141,9 @@ def resolve_epochs(cfg: dict, train_loader: DataLoader, budget_steps: int | None
     """
     Variant마다 epoch당 step 수가 다르므로(augmentation expand_factor 차이),
     epoch이 아닌 optimizer step 수를 맞춰야 공정 비교가 된다.
+
+    epochs_override는 스모크 테스트 전용 - 공정 비교를 깨뜨린다.
+    학습 예산을 줄이려면 --baseline-epochs를 쓸 것.
     """
     if epochs_override is not None:
         return epochs_override
@@ -151,8 +154,24 @@ def resolve_epochs(cfg: dict, train_loader: DataLoader, budget_steps: int | None
     return max(1, math.ceil(budget_steps / spe))
 
 
+def resolve_patience(cfg: dict, train_loader: DataLoader, budget_steps: int | None,
+                     baseline_spe: int | None) -> int:
+    """
+    early stopping patience도 epoch 단위이므로 step 예산을 맞추면 함께 환산해야 한다.
+    그렇지 않으면 epoch당 step이 적은 variant(augmentation 없음)가 훨씬 이른
+    시점에 중단되어 비교가 오염된다.
+    """
+    patience = cfg["training"]["patience"]
+    if budget_steps is None or baseline_spe is None:
+        return patience
+
+    spe = max(1, steps_per_epoch(train_loader))
+    return max(1, math.ceil(patience * baseline_spe / spe))
+
+
 def run_variant(name: str, cfg: dict, root_dir: Path, h5_file: Path,
-                budget_steps: int | None, epochs_override: int | None) -> dict:
+                budget_steps: int | None, epochs_override: int | None,
+                baseline_spe: int | None = None) -> dict:
     print("\n" + "=" * 80)
     print(f"[Ablation] Variant: {name}")
     print("=" * 80)
@@ -170,6 +189,7 @@ def run_variant(name: str, cfg: dict, root_dir: Path, h5_file: Path,
 
     train_loader, val_loader, test_loader = make_loaders(qs, cfg, h5_file, stats_file)
     epochs = resolve_epochs(cfg, train_loader, budget_steps, epochs_override)
+    patience = resolve_patience(cfg, train_loader, budget_steps, baseline_spe)
 
     model = build_model(cfg, q_len=len(qs))
     n_params = sum(p.numel() for p in model.parameters())
@@ -182,12 +202,13 @@ def run_variant(name: str, cfg: dict, root_dir: Path, h5_file: Path,
     print(f"  train samples : {len(train_loader.dataset):,}")
     print(f"  steps/epoch   : {steps_per_epoch(train_loader):,}")
     print(f"  epochs        : {epochs}  → total steps ≈ {epochs * steps_per_epoch(train_loader):,}")
+    print(f"  patience      : {patience} epochs (step 환산)")
 
     trainer = Trainer(
         model, train_loader, val_loader, var_dir,
         lr=cfg["training"]["lr"],
         weight_decay=cfg["training"]["weight_decay"],
-        patience=cfg["training"]["patience"],
+        patience=patience,
     )
     resume_path = var_dir / "last.pt"
     trainer.train(epochs, resume_from=resume_path if resume_path.exists() else None)
@@ -209,7 +230,9 @@ def run_variant(name: str, cfg: dict, root_dir: Path, h5_file: Path,
         "params": n_params,
         "train_samples": len(train_loader.dataset),
         "epochs_run": epochs,
+        "steps_per_epoch": steps_per_epoch(train_loader),
         "total_steps": epochs * steps_per_epoch(train_loader),
+        "patience_epochs": patience,
         "best_val_loss": trainer.best_val_loss,
     }
 
@@ -245,7 +268,12 @@ def main():
     parser.add_argument("--only", nargs="+", default=None,
                         help=f"실행할 variant 이름 (기본: 전체). 선택지: {list(VARIANTS)}")
     parser.add_argument("--epochs", type=int, default=None,
-                        help="모든 variant의 epoch를 강제 지정 (스모크 테스트용)")
+                        help="모든 variant의 epoch를 강제 지정. **스모크 테스트 전용** - "
+                             "variant마다 epoch당 step 수가 달라 공정 비교가 깨진다. "
+                             "예산을 줄이려면 --baseline-epochs를 쓸 것")
+    parser.add_argument("--baseline-epochs", type=int, default=None,
+                        help="기준 variant 기준 epoch 수. 이 값으로 총 step 예산을 정하고 "
+                             "나머지 variant는 같은 step 수에 맞춘다 (기본: config의 epochs)")
     parser.add_argument("--budget-mode", choices=["steps", "epochs"], default="steps",
                         help="steps: 기준 variant의 총 optimizer step 수에 맞춰 epoch 자동 조정 (기본). "
                              "epochs: config의 epochs를 그대로 사용")
@@ -278,24 +306,33 @@ def main():
         print(f"📦 Source dataset missing. Generating at {h5_file} ...")
         simulate.generate_1layer_data(base_qs, CONFIG, h5_file)
 
-    # step 예산 산정: 기준 variant의 (config epochs × steps/epoch)
+    # step 예산 산정: 기준 variant의 (baseline epochs × steps/epoch)
     budget_steps = None
+    baseline_spe = None
     if args.budget_mode == "steps" and args.epochs is None:
         base_cfg = deep_merge(CONFIG, VARIANTS[args.baseline])
+        base_stats = root_dir / "ablation" / args.baseline / "stats.pt"
+        base_stats.parent.mkdir(parents=True, exist_ok=True)
         base_loader, _, _ = make_loaders(
-            build_qs(base_cfg["simulation"]), base_cfg, h5_file,
-            root_dir / "ablation" / args.baseline / "stats.pt",
+            build_qs(base_cfg["simulation"]), base_cfg, h5_file, base_stats,
         )
-        budget_steps = base_cfg["training"]["epochs"] * steps_per_epoch(base_loader)
-        print(f"\n[Budget] baseline={args.baseline}, total steps = {budget_steps:,} "
+        baseline_spe = steps_per_epoch(base_loader)
+        base_epochs = args.baseline_epochs or base_cfg["training"]["epochs"]
+        budget_steps = base_epochs * baseline_spe
+        print(f"\n[Budget] baseline={args.baseline}, {base_epochs} epochs × "
+              f"{baseline_spe:,} steps = {budget_steps:,} steps "
               f"(모든 variant를 이 step 수에 맞춤)")
+    elif args.epochs is not None:
+        print(f"\n⚠️  --epochs {args.epochs}: variant마다 epoch당 step 수가 다르므로 "
+              f"공정 비교가 성립하지 않음 (스모크 테스트 전용)")
 
     rows = []
     out_csv = root_dir / "ablation" / "ablation_summary.csv"
     out_csv.parent.mkdir(parents=True, exist_ok=True)
 
     for name in names:
-        row = run_variant(name, cfgs[name], root_dir, h5_file, budget_steps, args.epochs)
+        row = run_variant(name, cfgs[name], root_dir, h5_file, budget_steps,
+                          args.epochs, baseline_spe)
         rows.append(row)
 
         # 매 variant마다 중간 저장 (중단 대비)
