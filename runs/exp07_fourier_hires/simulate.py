@@ -28,12 +28,21 @@ def generate_1layer_data(qs: np.ndarray, config: dict, h5_file: Path | str):
         "n_samples": simulation["n_samples"],
         "has_noise": False
     }
-    if param_ranges["thickness"] is not None:
-        simulator_args["thickness_range"] = param_ranges["thickness"]
-    if param_ranges["roughness"] is not None:
-        simulator_args["roughness_range"] = param_ranges["roughness"]
-    if param_ranges["sld"] is not None:
-        simulator_args["sld_range"] = param_ranges["sld"]
+    # config의 param_ranges 키 -> XRRSimulator 인자명 매핑
+    range_keys = {
+        "thickness": "thickness_range",
+        "roughness": "roughness_range",
+        "sld": "sld_range",
+        "sio2_thickness": "sio2_thick_range",
+        "sio2_roughness": "sio2_rough_range",
+        "sio2_sld": "sio2_sld_range",
+        "sub_roughness": "sub_rough_range",
+    }
+    for cfg_key, arg_name in range_keys.items():
+        value = param_ranges.get(cfg_key)
+        if value is not None:
+            simulator_args[arg_name] = tuple(value)
+
     simulator = XRRSimulator(
         **simulator_args
     )

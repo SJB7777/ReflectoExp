@@ -137,6 +137,56 @@ def save_correlation_plot(df: pd.DataFrame, param_names: list, save_path: Path):
     print(f"[Save] Correlation Plot: {save_path.name}")
 
 
+def save_history_plot(history: dict, save_path: Path):
+    """학습/검증 손실 곡선과 LR 스케줄을 저장"""
+    train = history.get("train", [])
+    val = history.get("val", [])
+    lrs = history.get("lr", [])
+
+    if not train and not val:
+        print("[Skip] History is empty, no learning curve to plot.")
+        return
+
+    epochs = np.arange(1, max(len(train), len(val)) + 1)
+
+    fig, (ax_loss, ax_lr) = plt.subplots(1, 2, figsize=(14, 5))
+
+    if train:
+        ax_loss.plot(epochs[:len(train)], train, label="Train", color="#3B8ED0", lw=1.8)
+    if val:
+        ax_loss.plot(epochs[:len(val)], val, label="Validation", color="#E63946", lw=1.8)
+        best_epoch = int(np.argmin(val)) + 1
+        best_val = float(np.min(val))
+        ax_loss.axvline(best_epoch, color="gray", linestyle="--", lw=1.0)
+        ax_loss.scatter([best_epoch], [best_val], color="#E63946", zorder=5)
+        ax_loss.set_title(
+            f"Loss Curve (Best: E{best_epoch}, Val={best_val:.6f})",
+            fontsize=12, fontweight="bold"
+        )
+    else:
+        ax_loss.set_title("Loss Curve", fontsize=12, fontweight="bold")
+
+    ax_loss.set_yscale("log")
+    ax_loss.set_xlabel("Epoch")
+    ax_loss.set_ylabel("MSE Loss (normalized params)")
+    ax_loss.legend()
+    ax_loss.grid(True, which="both", linestyle=":", alpha=0.6)
+
+    if lrs:
+        ax_lr.plot(epochs[:len(lrs)], lrs, color="#2A9D8F", lw=1.8)
+        ax_lr.set_yscale("log")
+    ax_lr.set_xlabel("Epoch")
+    ax_lr.set_ylabel("Learning Rate")
+    ax_lr.set_title("LR Schedule", fontsize=12, fontweight="bold")
+    ax_lr.grid(True, which="both", linestyle=":", alpha=0.6)
+
+    plt.tight_layout()
+    save_path.parent.mkdir(parents=True, exist_ok=True)
+    plt.savefig(save_path, dpi=150, bbox_inches="tight")
+    plt.close()
+    print(f"[Save] History Plot: {save_path.name}")
+
+
 def plot_error_heatmap(df: pd.DataFrame, save_path: Path | None = None):
     """
     파라미터 조합(Thickness vs Roughness)에 따른 예측 난이도(MAE) 시각화
@@ -370,8 +420,11 @@ def evaluate_pipeline(
     if report_history_path:
         history = ckpt.get("history", {})
         if history:
-            # Simple plotter import or inline logic
-            pass # (Assuming evaluate.py handles this via save_history_plot function if needed, but omitted for brevity as it's standard)
+            save_history_plot(history, report_history_path)
+        else:
+            print("[Skip] Checkpoint has no 'history' entry (older checkpoint format).")
+
+    return metrics
 
 
 # -----------------------------------------------------------------------------

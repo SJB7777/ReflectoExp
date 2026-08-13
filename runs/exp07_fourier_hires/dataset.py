@@ -61,28 +61,33 @@ class XRR1LayerDataset(Dataset):
         mode: str = "train", val_ratio: float = 0.2, test_ratio: float = 0.1,
         augment: bool = False, expand_factor: int = 1, aug_prob: float = 0.9,
         intensity_scale: float = 0.1, q_shift_sigma: float = 0.002,
-        res_sigma_range: tuple = (0.0001, 0.006)
+        res_sigma_range: tuple = (0.0001, 0.006),
+        augment_eval: bool = False
     ):
         self.hf = None
         self.h5_path = Path(h5_file)
         self.stats_path = Path(stats_file)
         self.mode = mode
         self.target_q = qs
-        self.augment = augment and (mode == 'train')
+        # augment_eval=True면 val/test에도 측정 노이즈를 적용해 평가 (expand는 train만)
+        self.augment = augment and (mode == 'train' or augment_eval)
         self.expand_factor = expand_factor if (mode == 'train') else 1
         self.aug_prob = aug_prob
 
+        self._load_metadata_only()
+        self._setup_split(val_ratio, test_ratio)
+
         if self.augment:
+            # Augmentation은 h5의 원본 q 그리드 위에서 수행되므로 smearing 커널의
+            # 픽셀 환산에는 target_q가 아닌 source_q의 간격을 써야 한다.
+            src_q = self.source_q[0] if self.source_q.ndim == 2 else self.source_q
             self.physics_augmenter = XRRAugmentations(
                 intensity_noise_scale=intensity_scale,
                 q_shift_sigma=q_shift_sigma,
                 res_sigma_range=res_sigma_range,
-                delta_q=(qs[1] - qs[0]),
+                delta_q=float(src_q[1] - src_q[0]),
                 prob=aug_prob
             )
-
-        self._load_metadata_only()
-        self._setup_split(val_ratio, test_ratio)
 
         self.processor = XRRPreprocessor(self.target_q)
 

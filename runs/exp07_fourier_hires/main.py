@@ -39,7 +39,8 @@ def get_dataloaders(qs, config, h5_file, stats_file):
         "intensity_scale": t_cfg["intensity_scale"],
         "q_shift_sigma": t_cfg["q_shift_sigma"],
         # [핵심] 77A 방지용 Resolution Smearing 범위 (물리적 q 단위)
-        "res_sigma_range": (0.0001, 0.006)
+        "res_sigma_range": tuple(t_cfg.get("res_sigma_range", (0.0001, 0.006))),
+        "augment_eval": t_cfg.get("augment_eval", False),
     }
 
     loaders = []
@@ -164,8 +165,9 @@ def main():
         fourier_scale=m_cfg["fourier_scale"]
     )
 
-    # Debug mode
-    register_debug_hooks(model)
+    # Debug mode (config["debug"]["hooks"] = True 일 때만; 학습 속도 손실 큼)
+    if CONFIG.get("debug", {}).get("hooks", False):
+        register_debug_hooks(model)
 
     # 5. Trainer 실행
     trainer = Trainer(

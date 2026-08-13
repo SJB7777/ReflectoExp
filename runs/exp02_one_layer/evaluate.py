@@ -44,7 +44,7 @@ def evaluate(model, test_loader: DataLoader, stats_path: Path | str, report_file
     print("\n" + "="*50)
     print("TEST RESULTS")
     print("="*50)
-    param_names = ["Thickness (nm)", "Roughness (Å)", "SLD"]
+    param_names = ["Thickness (Å)", "Roughness (Å)", "SLD (10⁻⁶ Å⁻²)"]
     for i, name in enumerate(param_names):
         print(f"{name:15s}: MAE={mae[i]:7.3f} | RMSE={rmse[i]:7.3f}")
     print("="*50)

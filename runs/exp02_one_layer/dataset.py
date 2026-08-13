@@ -27,23 +27,23 @@ class XRR1LayerDataset(Dataset):
         test_ratio = 0.1
         train_ratio = 1.0 - val_ratio - test_ratio
 
-        train_end = int(self.n_total * train_ratio)
-        val_end = int(self.n_total * (train_ratio + val_ratio))
+        self.train_end = int(self.n_total * train_ratio)
+        self.val_end = int(self.n_total * (train_ratio + val_ratio))
 
         if mode == "train":
-            self.indices = range(train_end)
+            self.indices = range(self.train_end)
         elif mode == "val":
-            self.indices = range(train_end, val_end)
+            self.indices = range(self.train_end, self.val_end)
         else:  # test
-            self.indices = range(val_end, self.n_total)
+            self.indices = range(self.val_end, self.n_total)
 
         self._setup_normalization()
 
     def _setup_normalization(self):
         """정규화 파라미터 설정"""
         if self.mode == "train":
-            # 통계 계산 (train 부분만)
-            train_indices = range(int(self.n_total * 0.7))
+            # 통계 계산 (train 부분만) - val_ratio에 따라 계산된 실제 분할 경계 사용
+            train_indices = range(self.train_end)
 
             R_log = np.log10(np.maximum(self.reflectivity[train_indices], 1e-15))
 
