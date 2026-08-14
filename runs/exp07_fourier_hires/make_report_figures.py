@@ -207,9 +207,10 @@ def main():
     ablation_dir = root / "ablation"
     out_dir = ablation_dir / "report_figures"
     if args.clean and out_dir.exists():
-        removed = len(list(out_dir.iterdir()))
+        # 파일 수는 세지 않는다 - 다른 프로세스가 방금 쓴 디렉터리를 열거하면
+        # 0이 나오는 경우가 있어 지운 개수를 신뢰할 수 없다. 삭제 자체는 정상.
         shutil.rmtree(out_dir)
-        print(f"[Clean] removed {removed} file(s) from {out_dir.name}/")
+        print(f"[Clean] cleared {out_dir}")
     out_dir.mkdir(parents=True, exist_ok=True)
 
     for label in labels:
