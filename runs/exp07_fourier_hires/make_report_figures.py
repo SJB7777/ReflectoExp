@@ -42,14 +42,14 @@ LABELS: dict[str, str] = {
     "exp07_lowres": "D_lowres_200",
 }
 
-# 그림 안에 찍히는 이름. exp02는 원본 실험이 아니라 조건 근사이므로 "-like"를 붙여
-# 슬라이드에서 원본 exp02 결과로 오인되지 않게 한다.
+# 그림 안에 찍히는 이름. 발표는 이전 모델 / 현재 모델 대비로 구성하므로
+# 실험 번호 대신 Previous / Current로 표기한다.
 DISPLAY: dict[str, str] = {
-    "exp07": "exp07",
-    "exp02": "exp02-like",
-    "exp07_nofourier": "exp07 (no Fourier)",
-    "exp07_noaug": "exp07 (no augmentation)",
-    "exp07_lowres": "exp07 (200 q-points)",
+    "exp07": "Current",
+    "exp02": "Previous",
+    "exp07_nofourier": "Current (no Fourier)",
+    "exp07_noaug": "Current (no augmentation)",
+    "exp07_lowres": "Current (200 q-points)",
 }
 
 DOMAINS = ["clean", "augmented"]
@@ -145,11 +145,15 @@ def build_for(label: str, variant: str, ablation_dir: Path, out_dir: Path):
 
         df = pd.read_csv(csv_path)
 
-        save_correlation_plot(df, PARAM_NAMES, out_dir / f"{label}_parity_{domain}.png")
-        plot_error_heatmap(df, save_path=out_dir / f"{label}_heatmap_{domain}.png")
+        head = f"{shown} — {DOMAIN_TITLE[domain]}"
+        save_correlation_plot(df, PARAM_NAMES,
+                              out_dir / f"{label}_parity_{domain}.png",
+                              title_prefix=head)
+        plot_error_heatmap(df, save_path=out_dir / f"{label}_heatmap_{domain}.png",
+                           title_prefix=head)
         plot_error_vs_thickness(
             df, out_dir / f"{label}_error_vs_thickness_{domain}.png",
-            f"{shown}: thickness error vs film thickness ({DOMAIN_TITLE[domain]})",
+            f"{head}: thickness error vs film thickness",
         )
 
         m = metrics_from_df(df)
@@ -162,7 +166,8 @@ def build_for(label: str, variant: str, ablation_dir: Path, out_dir: Path):
         ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=False)
         history = ckpt.get("history", {})
         if history:
-            save_history_plot(history, out_dir / f"{label}_learning_curve.png")
+            save_history_plot(history, out_dir / f"{label}_learning_curve.png",
+                              title_prefix=shown)
 
     # 곡선 재구성 그림은 GenX 시뮬레이션이 필요하므로 기존 산출물을 가져온다
     recon = var_dir / "reconstruction_analysis.png"
@@ -232,7 +237,7 @@ def write_readme(out_dir: Path, labels: list[str]):
         "",
         "## 슬라이드 각주 (그대로 붙여 쓸 것)",
         "",
-        "> exp02-like는 exp02 원본 실험이 아니라 조건 근사다. exp02의 데이터셋과 체크포인트가",
+        "> Previous는 exp02 원본 실험이 아니라 조건 근사다. exp02의 데이터셋과 체크포인트가",
         "> 소실되어, exp07 코드베이스에서 q 200점 / Fourier feature 없음 / augmentation 없음 /",
         "> depth 4 조건으로 재현했다. 원본 exp02와는 시뮬레이터(refnx vs GenX), 층 구조",
         "> (SiO2층 유무), 두께 범위(5–200 Å vs 10–1200 Å)가 다르다.",

@@ -91,7 +91,8 @@ def print_metrics_table(metrics: dict, param_names: list):
 # -----------------------------------------------------------------------------
 # 3. Visualization (The Ultimate Plotter)
 # -----------------------------------------------------------------------------
-def save_correlation_plot(df: pd.DataFrame, param_names: list, save_path: Path):
+def save_correlation_plot(df: pd.DataFrame, param_names: list, save_path: Path,
+                          title_prefix: str = ""):
     if not save_path:
         return
 
@@ -134,13 +135,15 @@ def save_correlation_plot(df: pd.DataFrame, param_names: list, save_path: Path):
         ax_h.set_ylabel("Density")
         ax_h.legend(loc='upper right')
 
+    if title_prefix:
+        fig.suptitle(title_prefix, fontsize=14, y=1.01)
     plt.tight_layout()
     plt.savefig(save_path, dpi=150, bbox_inches='tight')
     plt.close()
     print(f"[Save] Correlation Plot: {save_path.name}")
 
 
-def save_history_plot(history: dict, save_path: Path):
+def save_history_plot(history: dict, save_path: Path, title_prefix: str = ""):
     """학습/검증 손실 곡선과 LR 스케줄을 저장"""
     train = history.get("train", [])
     val = history.get("val", [])
@@ -183,6 +186,8 @@ def save_history_plot(history: dict, save_path: Path):
     ax_lr.set_ylabel("Learning rate")
     ax_lr.set_title("LR schedule")
 
+    if title_prefix:
+        fig.suptitle(title_prefix, fontsize=14, y=1.02)
     plt.tight_layout()
     save_path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(save_path, dpi=150, bbox_inches="tight")
@@ -190,7 +195,8 @@ def save_history_plot(history: dict, save_path: Path):
     print(f"[Save] History Plot: {save_path.name}")
 
 
-def plot_error_heatmap(df: pd.DataFrame, save_path: Path | None = None):
+def plot_error_heatmap(df: pd.DataFrame, save_path: Path | None = None,
+                       title_prefix: str = ""):
     """
     파라미터 조합(Thickness vs Roughness)에 따른 예측 난이도(MAE) 시각화
     """
@@ -240,7 +246,8 @@ def plot_error_heatmap(df: pd.DataFrame, save_path: Path | None = None):
         spine.set_color(INK)
     ax.tick_params(which="both", length=0)
 
-    ax.set_title("Prediction difficulty map: thickness MAE", pad=15)
+    heading = "Prediction difficulty map: thickness MAE"
+    ax.set_title(f"{title_prefix} — {heading}" if title_prefix else heading, pad=15)
     ax.set_xlabel("True thickness (Å)")
     ax.set_ylabel("True roughness (Å)")
 
