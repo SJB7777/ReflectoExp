@@ -10,9 +10,12 @@ import torch
 # Project Imports
 from config import CONFIG
 from dataset import XRR1LayerDataset
+from origin_style import INK, ORIGIN_COLORS, apply_origin_style, style_axes
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from xrr_model import XRRPhysicsModel
+
+apply_origin_style()
 
 from reflecto_exp.simulate.simul_genx import ParamSet, param2refl
 
@@ -90,46 +93,43 @@ def save_correlation_plot(df: pd.DataFrame, param_names: list, save_path: Path):
         return
 
     n_params = len(param_names)
-    fig, axes = plt.subplots(2, n_params, figsize=(6 * n_params, 10))
-
-    # Colors
-    scatter_color = '#3B8ED0'
-    line_color = '#E63946'
-    hist_color = '#2A9D8F'
+    fig, axes = plt.subplots(2, n_params, figsize=(5.2 * n_params, 9))
 
     for i, name in enumerate(param_names):
         clean = name.split(' (')[0]
         y_true = df[f"{clean}_True"].values
         y_pred = df[f"{clean}_Pred"].values
         err = df[f"{clean}_Error"].values
+        color = ORIGIN_COLORS[i % len(ORIGIN_COLORS)]
 
-        # 1. Scatter Plot
-        ax_s = axes[0][i]
+        # 1. Parity plot - 1:1 기준선은 계열이 아니라 참조선이므로 검은색
+        ax_s = style_axes(axes[0][i])
         min_v = min(y_true.min(), y_pred.min())
         max_v = max(y_true.max(), y_pred.max())
 
-        ax_s.plot([min_v, max_v], [min_v, max_v], color=line_color, lw=2, linestyle='--')
-        ax_s.scatter(y_true, y_pred, alpha=0.3, s=15, color=scatter_color, edgecolor='none')
+        ax_s.scatter(y_true, y_pred, s=10, facecolor=color, edgecolor='none', alpha=0.35)
+        ax_s.plot([min_v, max_v], [min_v, max_v], color=INK, lw=1.2, linestyle='--',
+                  label='1:1')
 
-        # Stats in title
         r2 = calculate_r2(y_true, y_pred)
-        ax_s.set_title(f"{name}\n$R^2$ = {r2:.4f}", fontsize=12, fontweight='bold')
-        ax_s.set_xlabel("Ground Truth")
+        ax_s.set_title(f"{name}    $R^2$ = {r2:.4f}")
+        ax_s.set_xlabel("Ground truth")
         ax_s.set_ylabel("Prediction")
-        ax_s.grid(True, linestyle=':', alpha=0.6)
+        ax_s.legend(loc='upper left')
 
-        # 2. Error Histogram
-        ax_h = axes[1][i]
+        # 2. Error histogram
+        ax_h = style_axes(axes[1][i])
         mu, sigma = np.mean(err), np.std(err)
 
-        ax_h.hist(err, bins=60, density=True, alpha=0.7, color=hist_color, edgecolor='black', linewidth=0.5)
-        ax_h.axvline(0, color=line_color, linestyle='--', linewidth=1.5)
-        ax_h.axvline(mu, color='orange', linestyle=':', linewidth=2, label=f"Mean: {mu:.2f}")
+        ax_h.hist(err, bins=60, density=True, color=color, edgecolor=INK, linewidth=0.5)
+        ax_h.axvline(0, color=INK, linestyle='--', linewidth=1.2)
+        ax_h.axvline(mu, color=INK, linestyle=':', linewidth=1.2,
+                     label=f"Mean {mu:.2f}, SD {sigma:.2f}")
 
-        ax_h.set_title(f"Error Distribution (Std: {sigma:.2f})")
-        ax_h.set_xlabel("Error (Pred - True)")
-        ax_h.legend(fontsize=9)
-        ax_h.grid(True, linestyle=':', alpha=0.6)
+        ax_h.set_title("Error distribution")
+        ax_h.set_xlabel("Error (pred − true)")
+        ax_h.set_ylabel("Density")
+        ax_h.legend(loc='upper right')
 
     plt.tight_layout()
     plt.savefig(save_path, dpi=150, bbox_inches='tight')
@@ -151,34 +151,34 @@ def save_history_plot(history: dict, save_path: Path):
 
     fig, (ax_loss, ax_lr) = plt.subplots(1, 2, figsize=(14, 5))
 
+    style_axes(ax_loss)
+    style_axes(ax_lr)
+
     if train:
-        ax_loss.plot(epochs[:len(train)], train, label="Train", color="#3B8ED0", lw=1.8)
+        ax_loss.plot(epochs[:len(train)], train, label="Train",
+                     color=ORIGIN_COLORS[0], lw=1.5)
     if val:
-        ax_loss.plot(epochs[:len(val)], val, label="Validation", color="#E63946", lw=1.8)
+        ax_loss.plot(epochs[:len(val)], val, label="Validation",
+                     color=ORIGIN_COLORS[1], lw=1.5)
         best_epoch = int(np.argmin(val)) + 1
         best_val = float(np.min(val))
-        ax_loss.axvline(best_epoch, color="gray", linestyle="--", lw=1.0)
-        ax_loss.scatter([best_epoch], [best_val], color="#E63946", zorder=5)
-        ax_loss.set_title(
-            f"Loss Curve (Best: E{best_epoch}, Val={best_val:.6f})",
-            fontsize=12, fontweight="bold"
-        )
+        ax_loss.plot([best_epoch], [best_val], marker="o", ms=8, mfc="none",
+                     mec=INK, mew=1.2, ls="none", label=f"Best (E{best_epoch})")
+        ax_loss.set_title(f"Loss curve    best val = {best_val:.6f}")
     else:
-        ax_loss.set_title("Loss Curve", fontsize=12, fontweight="bold")
+        ax_loss.set_title("Loss curve")
 
     ax_loss.set_yscale("log")
     ax_loss.set_xlabel("Epoch")
-    ax_loss.set_ylabel("MSE Loss (normalized params)")
-    ax_loss.legend()
-    ax_loss.grid(True, which="both", linestyle=":", alpha=0.6)
+    ax_loss.set_ylabel("MSE loss (normalized params)")
+    ax_loss.legend(loc="upper right")
 
     if lrs:
-        ax_lr.plot(epochs[:len(lrs)], lrs, color="#2A9D8F", lw=1.8)
+        ax_lr.plot(epochs[:len(lrs)], lrs, color=ORIGIN_COLORS[3], lw=1.5)
         ax_lr.set_yscale("log")
     ax_lr.set_xlabel("Epoch")
-    ax_lr.set_ylabel("Learning Rate")
-    ax_lr.set_title("LR Schedule", fontsize=12, fontweight="bold")
-    ax_lr.grid(True, which="both", linestyle=":", alpha=0.6)
+    ax_lr.set_ylabel("Learning rate")
+    ax_lr.set_title("LR schedule")
 
     plt.tight_layout()
     save_path.parent.mkdir(parents=True, exist_ok=True)
@@ -216,21 +216,30 @@ def plot_error_heatmap(df: pd.DataFrame, save_path: Path | None = None):
     pivot_table = pivot_table.sort_index(ascending=False)
 
     # 3. 시각화
-    plt.figure(figsize=(10, 8))
+    fig, ax = plt.subplots(figsize=(10, 8))
 
-    # vmin/vmax를 설정하여 특정 에러 이상은 모두 진하게 표시되도록 하면 패턴 찾기가 쉽습니다.
+    # 크기(magnitude)를 나타내므로 단일 색상 ramp를 밝음→어두움으로. 무지개 금지.
     sns.heatmap(
         pivot_table,
         annot=True,
         fmt=".2f",
-        cmap='YlOrRd',
-        cbar_kws={'label': 'Mean Absolute Error (Å)'},
-        linewidths=.5
+        cmap='Reds',
+        cbar_kws={'label': 'Mean absolute error (Å)'},
+        linewidths=.5,
+        linecolor='white',
+        ax=ax,
     )
 
-    plt.title("Prediction Difficulty Map: Thickness MAE", fontsize=14, fontweight='bold', pad=20)
-    plt.xlabel("True Thickness (Å)", fontsize=12)
-    plt.ylabel("True Roughness (Å)", fontsize=12)
+    # heatmap은 minor tick이 의미 없으므로 프레임만 적용
+    for spine in ax.spines.values():
+        spine.set_visible(True)
+        spine.set_linewidth(1.2)
+        spine.set_color(INK)
+    ax.tick_params(which="both", length=0)
+
+    ax.set_title("Prediction difficulty map: thickness MAE", pad=15)
+    ax.set_xlabel("True thickness (Å)")
+    ax.set_ylabel("True roughness (Å)")
 
     # 4. 물리적 해석 가이드라인 추가
     if save_path:
@@ -242,27 +251,28 @@ def plot_error_heatmap(df: pd.DataFrame, save_path: Path | None = None):
 
 def plot_single_curve(ax_main, ax_res, qs, R_true, R_pred, title):
     """Helper for plotting one XRR curve with residuals"""
-    # Main Curve
-    ax_main.plot(qs, R_true, 'k-', lw=2.0, alpha=0.6, label='Measured')
-    ax_main.plot(qs, R_pred, 'r--', lw=1.5, label='AI Recon')
+    style_axes(ax_main)
+    style_axes(ax_res)
+
+    # 측정값은 검은 실선(참조), 재구성은 계열 색 파선
+    ax_main.plot(qs, R_true, color=INK, lw=1.2, label='Ground truth')
+    ax_main.plot(qs, R_pred, color=ORIGIN_COLORS[0], lw=1.2, ls='--', label='AI recon.')
     ax_main.set_yscale('log')
-    ax_main.set_xticklabels([]) # Hide x labels for main
-    ax_main.grid(True, which='both', alpha=0.3)
-    ax_main.legend(loc='upper right', fontsize=8)
-    ax_main.set_title(title, fontsize=10, fontweight='bold')
+    ax_main.set_xticklabels([])
+    ax_main.set_ylabel('Reflectivity')
+    ax_main.legend(loc='upper right', fontsize=9)
+    ax_main.set_title(title, fontsize=10)
 
     # Residuals (Log Difference)
-    # epsilon to avoid log(0)
     log_true = np.log10(np.maximum(R_true, 1e-15))
     log_pred = np.log10(np.maximum(R_pred, 1e-15))
     diff = log_pred - log_true
 
-    ax_res.plot(qs, diff, 'b-', lw=1.0, alpha=0.7)
-    ax_res.axhline(0, color='k', linestyle='--', lw=1.0)
-    ax_res.set_ylim(-2, 2) # Limit residual range for visibility
-    ax_res.set_ylabel(r"$\Delta$ LogR", fontsize=8)
-    ax_res.set_xlabel(r"$q (\AA^{-1})$", fontsize=9)
-    ax_res.grid(True, alpha=0.3)
+    ax_res.plot(qs, diff, color=ORIGIN_COLORS[1], lw=1.0)
+    ax_res.axhline(0, color=INK, linestyle='--', lw=1.0)
+    ax_res.set_ylim(-2, 2)
+    ax_res.set_ylabel(r"$\Delta$ log$R$", fontsize=9)
+    ax_res.set_xlabel(r"$q$ ($\AA^{-1}$)", fontsize=10)
 
 def save_advanced_reconstruction(
     preds: np.ndarray, targets: np.ndarray, qs: np.ndarray,
@@ -384,7 +394,8 @@ def evaluate_pipeline(
 
     # 5. Metrics & DataFrame
     metrics = calculate_metrics(preds_np, targets_np)
-    param_names = ["Thickness (Å)", "Roughness (Å)", "SLD (10⁻⁶ Å⁻²)"]
+    # 유니코드 위첨자는 mathtext 폰트에 글리프가 없어 경고가 나므로 mathtext로 표기
+    param_names = ["Thickness (Å)", "Roughness (Å)", r"SLD (10$^{-6}$ Å$^{-2}$)"]
 
     df = pd.DataFrame()
     for i, name in enumerate(param_names):

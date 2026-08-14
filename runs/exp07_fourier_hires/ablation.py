@@ -59,7 +59,7 @@ VARIANTS: dict[str, dict] = {
     },
 }
 
-PARAM_NAMES = ["Thickness (Å)", "Roughness (Å)", "SLD (10⁻⁶ Å⁻²)"]
+PARAM_NAMES = ["Thickness (Å)", "Roughness (Å)", r"SLD (10$^{-6}$ Å$^{-2}$)"]
 
 
 def deep_merge(base: dict, override: dict) -> dict:
@@ -85,7 +85,9 @@ def build_qs(sim_cfg: dict) -> np.ndarray:
     return np.linspace(sim_cfg["q_min"], sim_cfg["q_max"], sim_cfg["q_points"]).astype(np.float32)
 
 
-def make_loaders(qs: np.ndarray, cfg: dict, h5_file: Path, stats_file: Path):
+def make_loaders(qs: np.ndarray, cfg: dict, h5_file: Path, stats_file: Path,
+                 modes: list[str] | None = None, augment_eval: bool | None = None,
+                 num_workers: int | None = None):
     t_cfg = cfg["training"]
     common = {
         "qs": qs,
@@ -100,17 +102,25 @@ def make_loaders(qs: np.ndarray, cfg: dict, h5_file: Path, stats_file: Path):
         "augment_eval": t_cfg.get("augment_eval", False),
     }
 
+    if modes is None:
+        modes = ["train", "val", "test"]
+    if augment_eval is not None:
+        common["augment_eval"] = augment_eval
+        # augment_eval을 켜려면 augmentation 자체가 활성이어야 한다
+        common["augment"] = common["augment"] or augment_eval
+
     loaders = []
-    for mode in ["train", "val", "test"]:
+    for mode in modes:
         ds = XRR1LayerDataset(
             **common, mode=mode,
             val_ratio=t_cfg["val_ratio"], test_ratio=t_cfg["test_ratio"]
         )
+        workers = t_cfg["num_workers"] if num_workers is None else num_workers
         loaders.append(DataLoader(
             ds,
             batch_size=t_cfg["batch_size"],
             shuffle=(mode == "train"),
-            num_workers=t_cfg["num_workers"],
+            num_workers=workers,
             pin_memory=torch.cuda.is_available(),
             drop_last=(mode == "train"),
         ))
@@ -169,9 +179,71 @@ def resolve_patience(cfg: dict, train_loader: DataLoader, budget_steps: int | No
     return max(1, math.ceil(patience * baseline_spe / spe))
 
 
+def eval_variant(name: str, cfg: dict, var_dir: Path, h5_file: Path, stats_file: Path,
+                 qs: np.ndarray, checkpoint_file: Path,
+                 augment_eval: bool, tag: str) -> dict:
+    """
+    학습 없이 저장된 best.pt로 평가만 수행.
+
+    augment_eval=True면 측정 노이즈가 실린 test set에서 평가한다. clean simulation
+    평가는 augmentation 없이 학습한 variant에게 유리하게 편향되므로(학습/평가 분포 일치),
+    두 도메인 모두에서 재는 것이 필요하다.
+
+    노이즈는 __getitem__마다 무작위로 생성되므로, variant 간 비교가 성립하려면
+    동일한 노이즈 시퀀스를 써야 한다. numpy 전역 상태는 DataLoader worker 프로세스로
+    결정론적으로 전달되지 않으므로 num_workers=0으로 고정하고 시드를 다시 심는다.
+    """
+    if not checkpoint_file.exists():
+        print(f"⚠️  Skipping {name}: checkpoint not found at {checkpoint_file}")
+        return {"variant": name, "error": "missing checkpoint"}
+
+    (test_loader,) = make_loaders(
+        qs, cfg, h5_file, stats_file,
+        modes=["test"],
+        augment_eval=augment_eval,
+        num_workers=0 if augment_eval else None,
+    )
+
+    if augment_eval:
+        np.random.seed(42)
+
+    n_params = sum(p.numel() for p in build_model(cfg, q_len=len(qs)).parameters())
+    domain = "augmented (measurement noise)" if augment_eval else "clean simulation"
+    print(f"  eval domain   : {domain}")
+    print(f"  test samples  : {len(test_loader.dataset):,}")
+
+    metrics = evaluate_pipeline(
+        test_loader, checkpoint_file, stats_file, qs,
+        report_img_path=var_dir / f"evaluation_correlation_{tag}.png",
+        report_csv_path=var_dir / f"evaluation_results_{tag}.csv",
+        report_history_path=None,
+    )
+
+    row: dict = {
+        "variant": name,
+        "eval_domain": "augmented" if augment_eval else "clean",
+        "use_fourier": cfg["model"]["use_fourier"],
+        "depth": cfg["model"]["depth"],
+        "q_points": len(qs),
+        "augment": cfg["training"]["augment"],
+        "expand_factor": cfg["training"]["expand_factor"],
+        "params": n_params,
+    }
+    if metrics is not None:
+        for i, pname in enumerate(PARAM_NAMES):
+            clean = pname.split(" (")[0]
+            row[f"{clean}_MAE"] = float(metrics["mae"][i])
+            row[f"{clean}_RMSE"] = float(metrics["rmse"][i])
+            row[f"{clean}_MAPE"] = float(metrics["mape"][i])
+            row[f"{clean}_R2"] = float(metrics["r2"][i])
+    return row
+
+
 def run_variant(name: str, cfg: dict, root_dir: Path, h5_file: Path,
                 budget_steps: int | None, epochs_override: int | None,
-                baseline_spe: int | None = None) -> dict:
+                baseline_spe: int | None = None,
+                eval_only: bool = False, augment_eval: bool = False,
+                tag: str = "clean") -> dict:
     print("\n" + "=" * 80)
     print(f"[Ablation] Variant: {name}")
     print("=" * 80)
@@ -184,6 +256,11 @@ def run_variant(name: str, cfg: dict, root_dir: Path, h5_file: Path,
     checkpoint_file = var_dir / "best.pt"
 
     qs = build_qs(cfg["simulation"])
+
+    if eval_only:
+        return eval_variant(name, cfg, var_dir, h5_file, stats_file, qs,
+                            checkpoint_file, augment_eval, tag)
+
     np.save(var_dir / "qs.npy", qs)
     save_config(cfg, var_dir / "config.json")
 
@@ -287,6 +364,11 @@ def main():
                         help="step 예산 기준이 되는 variant")
     parser.add_argument("--dry-run", action="store_true",
                         help="학습 없이 실행 계획만 출력")
+    parser.add_argument("--eval-only", action="store_true",
+                        help="학습을 건너뛰고 저장된 best.pt로 평가만 수행")
+    parser.add_argument("--augment-eval", action="store_true",
+                        help="측정 노이즈가 실린 test set에서 평가. clean 평가는 augmentation "
+                             "없이 학습한 variant에 유리하게 편향되므로 두 도메인 모두 측정할 것")
     args = parser.parse_args()
 
     names = args.only if args.only else list(VARIANTS)
@@ -322,7 +404,7 @@ def main():
     # step 예산 산정: 기준 variant의 (baseline epochs × steps/epoch)
     budget_steps = None
     baseline_spe = None
-    if args.budget_mode == "steps" and args.epochs is None:
+    if args.budget_mode == "steps" and args.epochs is None and not args.eval_only:
         # expand_factor 덮어쓰기가 적용된 config를 그대로 사용해야 예산이 어긋나지 않음
         base_cfg = cfgs.get(args.baseline)
         if base_cfg is None:
@@ -351,13 +433,18 @@ def main():
         print(f"\n⚠️  --epochs {args.epochs}: variant마다 epoch당 step 수가 다르므로 "
               f"공정 비교가 성립하지 않음 (스모크 테스트 전용)")
 
+    tag = "augmented" if args.augment_eval else "clean"
+    suffix = f"_{tag}" if args.eval_only else ""
+
     rows = []
-    out_csv = root_dir / "ablation" / "ablation_summary.csv"
+    out_csv = root_dir / "ablation" / f"ablation_summary{suffix}.csv"
     out_csv.parent.mkdir(parents=True, exist_ok=True)
 
     for name in names:
         row = run_variant(name, cfgs[name], root_dir, h5_file, budget_steps,
-                          args.epochs, baseline_spe)
+                          args.epochs, baseline_spe,
+                          eval_only=args.eval_only, augment_eval=args.augment_eval,
+                          tag=tag)
         rows.append(row)
 
         # 매 variant마다 중간 저장 (중단 대비)
@@ -366,14 +453,14 @@ def main():
 
     df = pd.DataFrame(rows)
     print("\n" + "=" * 100)
-    print("ABLATION SUMMARY")
+    print(f"ABLATION SUMMARY ({tag} test set)" if args.eval_only else "ABLATION SUMMARY")
     print("=" * 100)
-    cols = ["variant", "q_points", "use_fourier", "augment", "params",
+    cols = ["variant", "eval_domain", "q_points", "use_fourier", "augment", "params",
             "Thickness_MAE", "Roughness_MAE", "SLD_MAE", "Thickness_R2"]
     print(df[[c for c in cols if c in df.columns]].to_string(index=False))
     print("=" * 100)
 
-    (root_dir / "ablation" / "ablation_summary.json").write_text(
+    (root_dir / "ablation" / f"ablation_summary{suffix}.json").write_text(
         json.dumps(rows, indent=2, ensure_ascii=False), encoding="utf-8"
     )
 
