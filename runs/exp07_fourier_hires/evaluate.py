@@ -17,6 +17,9 @@ from xrr_model import XRRPhysicsModel
 
 apply_origin_style()
 
+# 유니코드 위첨자는 mathtext 폰트에 글리프가 없어 경고가 나므로 mathtext로 표기
+PARAM_NAMES = ["Thickness (Å)", "Roughness (Å)", r"SLD (10$^{-6}$ Å$^{-2}$)"]
+
 from reflecto_exp.simulate.simul_genx import ParamSet, param2refl
 
 
@@ -394,8 +397,7 @@ def evaluate_pipeline(
 
     # 5. Metrics & DataFrame
     metrics = calculate_metrics(preds_np, targets_np)
-    # 유니코드 위첨자는 mathtext 폰트에 글리프가 없어 경고가 나므로 mathtext로 표기
-    param_names = ["Thickness (Å)", "Roughness (Å)", r"SLD (10$^{-6}$ Å$^{-2}$)"]
+    param_names = PARAM_NAMES
 
     df = pd.DataFrame()
     for i, name in enumerate(param_names):
