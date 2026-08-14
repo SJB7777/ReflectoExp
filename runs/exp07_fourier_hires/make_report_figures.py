@@ -42,6 +42,16 @@ LABELS: dict[str, str] = {
     "exp07_lowres": "D_lowres_200",
 }
 
+# 그림 안에 찍히는 이름. exp02는 원본 실험이 아니라 조건 근사이므로 "-like"를 붙여
+# 슬라이드에서 원본 exp02 결과로 오인되지 않게 한다.
+DISPLAY: dict[str, str] = {
+    "exp07": "exp07",
+    "exp02": "exp02-like",
+    "exp07_nofourier": "exp07 (no Fourier)",
+    "exp07_noaug": "exp07 (no augmentation)",
+    "exp07_lowres": "exp07 (200 q-points)",
+}
+
 DOMAINS = ["clean", "augmented"]
 DOMAIN_TITLE = {"clean": "clean simulation", "augmented": "with measurement noise"}
 
@@ -123,7 +133,8 @@ def build_for(label: str, variant: str, ablation_dir: Path, out_dir: Path):
         print(f"[Skip] {label}: {var_dir} not found")
         return
 
-    print(f"\n=== {label}  (variant: {variant}) ===")
+    shown = DISPLAY.get(label, label)
+    print(f"\n=== {label}  (variant: {variant}, shown as '{shown}') ===")
     summary = []
 
     for domain in DOMAINS:
@@ -138,7 +149,7 @@ def build_for(label: str, variant: str, ablation_dir: Path, out_dir: Path):
         plot_error_heatmap(df, save_path=out_dir / f"{label}_heatmap_{domain}.png")
         plot_error_vs_thickness(
             df, out_dir / f"{label}_error_vs_thickness_{domain}.png",
-            f"{label}: thickness error vs film thickness ({DOMAIN_TITLE[domain]})",
+            f"{shown}: thickness error vs film thickness ({DOMAIN_TITLE[domain]})",
         )
 
         m = metrics_from_df(df)
@@ -187,7 +198,58 @@ def main():
     for label in labels:
         build_for(label, LABELS[label], ablation_dir, out_dir)
 
+    write_readme(out_dir, labels)
     print(f"\n✅ Figures written to {out_dir}")
+
+
+def write_readme(out_dir: Path, labels: list[str]):
+    """그림이 무엇을 재는지, 무엇을 재지 않는지 함께 둔다."""
+    lines = [
+        "# Report figures",
+        "",
+        "OriginLab 스타일. `make_report_figures.py`로 생성.",
+        "",
+        "## 파일 이름",
+        "",
+        "| 접두사 | 그림에 표기되는 이름 | ablation variant |",
+        "|---|---|---|",
+    ]
+    for label in labels:
+        lines.append(f"| `{label}` | {DISPLAY.get(label, label)} | `{LABELS[label]}` |")
+
+    lines += [
+        "",
+        "각 모델마다: `_parity_`, `_heatmap_`, `_error_vs_thickness_` (각각 clean/augmented),",
+        "`_learning_curve`, `_reconstruction`, `_metrics.csv`.",
+        "",
+        "## 평가 도메인 두 가지",
+        "",
+        "- **clean** — 노이즈 없는 시뮬레이션",
+        "- **augmented** — footprint, 기기 분해능, I0 변동, 배경, Poisson 노이즈, q축 정렬오차 적용",
+        "",
+        "clean 지표만 제시하면 augmentation 없이 학습한 모델이 유리하게 보인다.",
+        "학습 분포와 평가 분포가 같기 때문이며 일반화 성능이 아니다. **두 도메인을 함께 제시할 것.**",
+        "",
+        "## 슬라이드 각주 (그대로 붙여 쓸 것)",
+        "",
+        "> exp02-like는 exp02 원본 실험이 아니라 조건 근사다. exp02의 데이터셋과 체크포인트가",
+        "> 소실되어, exp07 코드베이스에서 q 200점 / Fourier feature 없음 / augmentation 없음 /",
+        "> depth 4 조건으로 재현했다. 원본 exp02와는 시뮬레이터(refnx vs GenX), 층 구조",
+        "> (SiO2층 유무), 두께 범위(5–200 Å vs 10–1200 Å)가 다르다.",
+        "",
+        "> 학습 예산은 기준 조건의 2 %(93,750 / 4,687,500 step)이며 모든 모델에 동일하게",
+        "> 맞췄다. 모델 간 상대 비교용이고 절대 성능이 아니다.",
+        "",
+        "> 두 평가 도메인 모두 시뮬레이션이다. 실측 데이터 검증은 수행하지 않았다.",
+        "",
+        "## 주의",
+        "",
+        "거칠기 MAPE는 참값이 0에 가까운 샘플 때문에 분모가 붕괴해 40–350 %로 나온다.",
+        "거칠기는 MAE와 R²로 보고할 것.",
+    ]
+    path = out_dir / "README.md"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"[Save] {path.name}")
 
 
 if __name__ == "__main__":
