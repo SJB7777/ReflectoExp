@@ -35,21 +35,21 @@ apply_origin_style()
 # exp02는 원본 데이터가 소실되어 재현 불가하므로 동등 조건 variant로 대체한다
 # (q 200점, Fourier 없음, augmentation 없음).
 LABELS: dict[str, str] = {
-    "exp07": "A_full",
-    "exp02": "E_exp02_like",
-    "exp07_nofourier": "B_no_fourier",
-    "exp07_noaug": "C_no_augment",
-    "exp07_lowres": "D_lowres_200",
+    "current": "A_full",
+    "previous": "E_exp02_like",
+    "current_nofourier": "B_no_fourier",
+    "current_noaug": "C_no_augment",
+    "current_lowres": "D_lowres_200",
 }
 
 # 그림 안에 찍히는 이름. 발표는 이전 모델 / 현재 모델 대비로 구성하므로
 # 실험 번호 대신 Previous / Current로 표기한다.
 DISPLAY: dict[str, str] = {
-    "exp07": "Current",
-    "exp02": "Previous",
-    "exp07_nofourier": "Current (no Fourier)",
-    "exp07_noaug": "Current (no augmentation)",
-    "exp07_lowres": "Current (200 q-points)",
+    "current": "Current",
+    "previous": "Previous",
+    "current_nofourier": "Current (no Fourier)",
+    "current_noaug": "Current (no augmentation)",
+    "current_lowres": "Current (200 q-points)",
 }
 
 DOMAINS = ["clean", "augmented"]
@@ -185,9 +185,11 @@ def build_for(label: str, variant: str, ablation_dir: Path, out_dir: Path):
 
 def main():
     parser = argparse.ArgumentParser(description="Report figure builder")
-    parser.add_argument("--only", nargs="+", default=["exp07", "exp02"],
-                        help=f"출력할 라벨 (기본: exp07 exp02). 선택지: {list(LABELS)}")
+    parser.add_argument("--only", nargs="+", default=["current", "previous"],
+                        help=f"출력할 라벨 (기본: current previous). 선택지: {list(LABELS)}")
     parser.add_argument("--all", action="store_true", help="정의된 라벨 전체 출력")
+    parser.add_argument("--clean", action="store_true",
+                        help="출력 폴더를 비우고 새로 생성 (이름 규칙이 바뀐 뒤 잔여 파일 제거용)")
     args = parser.parse_args()
 
     labels = list(LABELS) if args.all else args.only
@@ -198,6 +200,10 @@ def main():
     root = Path(CONFIG["base_dir"]) / CONFIG["exp_name"]
     ablation_dir = root / "ablation"
     out_dir = ablation_dir / "report_figures"
+    if args.clean and out_dir.exists():
+        removed = len(list(out_dir.iterdir()))
+        shutil.rmtree(out_dir)
+        print(f"[Clean] removed {removed} file(s) from {out_dir.name}/")
     out_dir.mkdir(parents=True, exist_ok=True)
 
     for label in labels:
