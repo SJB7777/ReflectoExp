@@ -91,8 +91,23 @@ def print_metrics_table(metrics: dict, param_names: list):
 # -----------------------------------------------------------------------------
 # 3. Visualization (The Ultimate Plotter)
 # -----------------------------------------------------------------------------
+def _outside_note(ax, frac: float, loc: str = "lower right"):
+    """축 밖으로 잘려 나간 점의 비율을 그림 안에 남긴다."""
+    if frac <= 0:
+        return
+    x, ha = (0.99, "right") if "right" in loc else (0.01, "left")
+    y, va = (0.02, "bottom") if "lower" in loc else (0.98, "top")
+    ax.text(x, y, f"{frac:.1f}% outside axes", transform=ax.transAxes,
+            ha=ha, va=va, fontsize=9, color=INK)
+
+
 def save_correlation_plot(df: pd.DataFrame, param_names: list, save_path: Path,
-                          title_prefix: str = ""):
+                          title_prefix: str = "", clip_axes: bool = False):
+    """
+    clip_axes=True면 소수의 큰 이상치가 축을 늘려 본체를 뭉개는 것을 막는다.
+    parity는 참값 범위로, 오차 히스토그램은 0.5-99.5 퍼센타일로 자르고
+    잘린 비율을 그림에 표기한다.
+    """
     if not save_path:
         return
 
@@ -115,17 +130,34 @@ def save_correlation_plot(df: pd.DataFrame, param_names: list, save_path: Path,
         ax_s.plot([min_v, max_v], [min_v, max_v], color=INK, lw=1.2, linestyle='--',
                   label='1:1')
 
+        # 지표는 항상 전체 데이터로 계산한다 - 축만 자른다
         r2 = calculate_r2(y_true, y_pred)
         ax_s.set_title(f"{name}    $R^2$ = {r2:.4f}")
         ax_s.set_xlabel("Ground truth")
         ax_s.set_ylabel("Prediction")
         ax_s.legend(loc='upper left')
 
+        if clip_axes:
+            span = y_true.max() - y_true.min()
+            lo, hi = y_true.min() - 0.03 * span, y_true.max() + 0.03 * span
+            outside = np.mean((y_pred < lo) | (y_pred > hi)) * 100
+            ax_s.set_xlim(lo, hi)
+            ax_s.set_ylim(lo, hi)
+            ax_s.set_aspect('equal', adjustable='box')
+            _outside_note(ax_s, outside)
+
         # 2. Error histogram
         ax_h = style_axes(axes[1][i])
         mu, sigma = np.mean(err), np.std(err)
 
-        ax_h.hist(err, bins=60, density=True, color=color, edgecolor=INK, linewidth=0.5)
+        hist_range = None
+        if clip_axes:
+            lo_e, hi_e = np.percentile(err, [0.5, 99.5])
+            pad = 0.05 * (hi_e - lo_e)
+            hist_range = (lo_e - pad, hi_e + pad)
+
+        ax_h.hist(err, bins=60, density=True, range=hist_range,
+                  color=color, edgecolor=INK, linewidth=0.5)
         ax_h.axvline(0, color=INK, linestyle='--', linewidth=1.2)
         ax_h.axvline(mu, color=INK, linestyle=':', linewidth=1.2,
                      label=f"Mean {mu:.2f}, SD {sigma:.2f}")
@@ -134,6 +166,11 @@ def save_correlation_plot(df: pd.DataFrame, param_names: list, save_path: Path,
         ax_h.set_xlabel("Error (pred − true)")
         ax_h.set_ylabel("Density")
         ax_h.legend(loc='upper right')
+
+        if hist_range is not None:
+            ax_h.set_xlim(*hist_range)
+            outside_e = np.mean((err < hist_range[0]) | (err > hist_range[1])) * 100
+            _outside_note(ax_h, outside_e, loc="lower right")
 
     if title_prefix:
         fig.suptitle(title_prefix, fontsize=14, y=1.01)

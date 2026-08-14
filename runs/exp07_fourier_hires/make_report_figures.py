@@ -52,7 +52,6 @@ DISPLAY: dict[str, str] = {
     "current_lowres": "Current (200 q-points)",
 }
 
-DOMAINS = ["clean", "augmented"]
 DOMAIN_TITLE = {"clean": "clean simulation", "augmented": "with measurement noise"}
 
 
@@ -127,7 +126,8 @@ def plot_error_vs_thickness(df: pd.DataFrame, save_path: Path, title: str):
     print(f"  [Save] {save_path.name}")
 
 
-def build_for(label: str, variant: str, ablation_dir: Path, out_dir: Path):
+def build_for(label: str, variant: str, ablation_dir: Path, out_dir: Path,
+              domains: list[str], clip_axes: bool):
     var_dir = ablation_dir / variant
     if not var_dir.exists():
         print(f"[Skip] {label}: {var_dir} not found")
@@ -137,7 +137,7 @@ def build_for(label: str, variant: str, ablation_dir: Path, out_dir: Path):
     print(f"\n=== {label}  (variant: {variant}, shown as '{shown}') ===")
     summary = []
 
-    for domain in DOMAINS:
+    for domain in domains:
         csv_path = var_dir / f"evaluation_results_{domain}.csv"
         if not csv_path.exists():
             print(f"  [Skip] {domain}: {csv_path.name} not found")
@@ -148,7 +148,7 @@ def build_for(label: str, variant: str, ablation_dir: Path, out_dir: Path):
         head = f"{shown} — {DOMAIN_TITLE[domain]}"
         save_correlation_plot(df, PARAM_NAMES,
                               out_dir / f"{label}_parity_{domain}.png",
-                              title_prefix=head)
+                              title_prefix=head, clip_axes=clip_axes)
         plot_error_heatmap(df, save_path=out_dir / f"{label}_heatmap_{domain}.png",
                            title_prefix=head)
         plot_error_vs_thickness(
@@ -190,6 +190,12 @@ def main():
     parser.add_argument("--all", action="store_true", help="정의된 라벨 전체 출력")
     parser.add_argument("--clean", action="store_true",
                         help="출력 폴더를 비우고 새로 생성 (이름 규칙이 바뀐 뒤 잔여 파일 제거용)")
+    parser.add_argument("--domains", nargs="+", default=["augmented"],
+                        choices=["clean", "augmented"],
+                        help="평가 도메인 (기본: augmented). 절대 성능이 아니라 "
+                             "측정 조건에서의 성능을 보여주는 쪽이 augmented")
+    parser.add_argument("--no-clip", action="store_true",
+                        help="축 자르기 없이 전체 범위로 그리기")
     args = parser.parse_args()
 
     labels = list(LABELS) if args.all else args.only
@@ -207,13 +213,14 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
 
     for label in labels:
-        build_for(label, LABELS[label], ablation_dir, out_dir)
+        build_for(label, LABELS[label], ablation_dir, out_dir,
+                  domains=args.domains, clip_axes=not args.no_clip)
 
-    write_readme(out_dir, labels)
+    write_readme(out_dir, labels, args.domains)
     print(f"\n✅ Figures written to {out_dir}")
 
 
-def write_readme(out_dir: Path, labels: list[str]):
+def write_readme(out_dir: Path, labels: list[str], domains: list[str]):
     """그림이 무엇을 재는지, 무엇을 재지 않는지 함께 둔다."""
     lines = [
         "# Report figures",
@@ -230,16 +237,26 @@ def write_readme(out_dir: Path, labels: list[str]):
 
     lines += [
         "",
-        "각 모델마다: `_parity_`, `_heatmap_`, `_error_vs_thickness_` (각각 clean/augmented),",
+        f"각 모델마다: `_parity_`, `_heatmap_`, `_error_vs_thickness_` ({'/'.join(domains)}),",
         "`_learning_curve`, `_reconstruction`, `_metrics.csv`.",
         "",
-        "## 평가 도메인 두 가지",
+        "## 평가 도메인",
+        "",
+        f"이번 출력: **{', '.join(domains)}**",
         "",
         "- **clean** — 노이즈 없는 시뮬레이션",
         "- **augmented** — footprint, 기기 분해능, I0 변동, 배경, Poisson 노이즈, q축 정렬오차 적용",
         "",
         "clean 지표만 제시하면 augmentation 없이 학습한 모델이 유리하게 보인다.",
-        "학습 분포와 평가 분포가 같기 때문이며 일반화 성능이 아니다. **두 도메인을 함께 제시할 것.**",
+        "학습 분포와 평가 분포가 같기 때문이며 일반화 성능이 아니다.",
+        "clean 수치를 함께 쓰려면 `--domains clean augmented`로 재생성할 것.",
+        "",
+        "## 축 범위",
+        "",
+        "parity는 참값 범위로, 오차 히스토그램은 0.5–99.5 퍼센타일로 자른다.",
+        "소수의 큰 이상치가 축을 늘려 본체를 뭉개기 때문이다.",
+        "**MAE·RMSE·R² 등 지표는 항상 전체 데이터로 계산하며, 잘리는 것은 축뿐이다.**",
+        "잘려 나간 점의 비율은 각 그림 안에 표기된다. 전체 범위가 필요하면 `--no-clip`.",
         "",
         "## 슬라이드 각주 (그대로 붙여 쓸 것)",
         "",
