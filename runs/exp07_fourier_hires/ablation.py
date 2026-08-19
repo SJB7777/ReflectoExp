@@ -23,6 +23,7 @@ import argparse
 import copy
 import json
 import math
+import time
 from pathlib import Path
 
 import numpy as np
@@ -288,7 +289,24 @@ def run_variant(name: str, cfg: dict, root_dir: Path, h5_file: Path,
         patience=patience,
     )
     resume_path = var_dir / "last.pt"
+    t0 = time.perf_counter()
     trainer.train(epochs, resume_from=resume_path if resume_path.exists() else None)
+    train_seconds = time.perf_counter() - t0
+
+    # 재개 학습이면 이번 호출분만 잰다. 누적 시간은 이전 실행분을 더해 보관한다.
+    time_log = var_dir / "train_time.json"
+    prev_seconds = 0.0
+    if time_log.exists():
+        prev_seconds = float(json.loads(time_log.read_text()).get("cumulative_seconds", 0.0))
+    cumulative_seconds = prev_seconds + train_seconds
+    time_log.write_text(json.dumps({
+        "cumulative_seconds": cumulative_seconds,
+        "last_run_seconds": train_seconds,
+    }, indent=2), encoding="utf-8")
+
+    val_hist = trainer.history.get("val", [])
+    best_epoch = int(np.argmin(val_hist)) + 1 if val_hist else None
+    epochs_ran = len(val_hist)
 
     metrics = evaluate_pipeline(
         test_loader, checkpoint_file, stats_file, qs,
@@ -306,11 +324,16 @@ def run_variant(name: str, cfg: dict, root_dir: Path, h5_file: Path,
         "expand_factor": cfg["training"]["expand_factor"],
         "params": n_params,
         "train_samples": len(train_loader.dataset),
-        "epochs_run": epochs,
+        "epochs_budget": epochs,
+        "epochs_ran": epochs_ran,
+        "best_epoch": best_epoch,
+        "early_stopped": epochs_ran < epochs,
         "steps_per_epoch": steps_per_epoch(train_loader),
-        "total_steps": epochs * steps_per_epoch(train_loader),
+        "total_steps": epochs_ran * steps_per_epoch(train_loader),
         "patience_epochs": patience,
         "best_val_loss": trainer.best_val_loss,
+        "train_seconds": cumulative_seconds,
+        "train_seconds_this_run": train_seconds,
     }
 
     if metrics is not None:
@@ -324,6 +347,29 @@ def run_variant(name: str, cfg: dict, root_dir: Path, h5_file: Path,
         print("⚠️  Evaluation skipped (missing checkpoint or stats).")
 
     return row
+
+
+def merge_summary(rows: list[dict], out_csv: Path) -> pd.DataFrame:
+    """
+    --only로 일부 variant만 돌려도 기존 summary의 나머지 행을 잃지 않도록 병합한다.
+    이번에 돌린 variant는 새 결과로 대체하고, 나머지는 그대로 둔다.
+    """
+    df_new = pd.DataFrame(rows)
+    if out_csv.exists():
+        old = pd.read_csv(out_csv, encoding="utf-8-sig")
+        if "variant" in old.columns:
+            kept = old[~old["variant"].isin(df_new["variant"])]
+            df_new = pd.concat([kept, df_new], ignore_index=True)
+
+    order = {name: i for i, name in enumerate(VARIANTS)}
+    df_new = (df_new
+              .sort_values("variant", key=lambda s: s.map(order).fillna(len(order)))
+              .reset_index(drop=True))
+    df_new.to_csv(out_csv, index=False, encoding="utf-8-sig")
+    out_csv.with_suffix(".json").write_text(
+        df_new.to_json(orient="records", indent=2, force_ascii=False), encoding="utf-8"
+    )
+    return df_new
 
 
 def print_plan(cfgs: dict[str, dict]):
@@ -448,10 +494,9 @@ def main():
         rows.append(row)
 
         # 매 variant마다 중간 저장 (중단 대비)
-        pd.DataFrame(rows).to_csv(out_csv, index=False, encoding="utf-8-sig")
+        df = merge_summary(rows, out_csv)
         print(f"[Save] Ablation summary → {out_csv}")
 
-    df = pd.DataFrame(rows)
     print("\n" + "=" * 100)
     print(f"ABLATION SUMMARY ({tag} test set)" if args.eval_only else "ABLATION SUMMARY")
     print("=" * 100)
@@ -459,10 +504,7 @@ def main():
             "Thickness_MAE", "Roughness_MAE", "SLD_MAE", "Thickness_R2"]
     print(df[[c for c in cols if c in df.columns]].to_string(index=False))
     print("=" * 100)
-
-    (root_dir / "ablation" / f"ablation_summary{suffix}.json").write_text(
-        json.dumps(rows, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+    # json은 merge_summary가 csv와 함께 이미 기록했다
 
 
 if __name__ == "__main__":
