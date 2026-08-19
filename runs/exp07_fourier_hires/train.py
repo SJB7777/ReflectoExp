@@ -163,7 +163,10 @@ class Trainer:
             'epoch': epoch,
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
+            'scheduler_state_dict': self.scheduler.state_dict(),
             'val_loss': val_loss,
+            'best_val_loss': self.best_val_loss,
+            'patience_counter': self.patience_counter,
             'history': self.history,
             'config': {'model_args': model_config}
         }, path)
@@ -175,7 +178,20 @@ class Trainer:
         self.model.load_state_dict(checkpoint['model_state_dict'])
         if 'optimizer_state_dict' in checkpoint:
             self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        if 'scheduler_state_dict' in checkpoint:
+            self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
         self.history = checkpoint.get('history', self.history)
-        self.best_val_loss = checkpoint.get('val_loss', float('inf'))
-        print(f"🔄 Resuming from Epoch {checkpoint['epoch'] + 1}")
+
+        # last.pt의 'val_loss'는 마지막 epoch 값이지 최저값이 아니다. 그대로 쓰면
+        # 재개 후 기준이 느슨해져 더 나쁜 모델이 best.pt를 덮어쓴다.
+        # 저장된 best_val_loss를 우선 쓰고, 없으면(구버전 ckpt) history에서 복원한다.
+        best = checkpoint.get('best_val_loss')
+        if best is None:
+            val_hist = checkpoint.get('history', {}).get('val', [])
+            best = min(val_hist) if val_hist else checkpoint.get('val_loss', float('inf'))
+        self.best_val_loss = best
+        self.patience_counter = checkpoint.get('patience_counter', 0)
+
+        print(f"🔄 Resuming from Epoch {checkpoint['epoch'] + 1} "
+              f"(best val = {self.best_val_loss:.6f}, patience {self.patience_counter})")
         return checkpoint['epoch'] + 1
